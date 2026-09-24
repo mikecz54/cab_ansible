@@ -1,0 +1,235 @@
+#! /usr/bin/python
+
+from LIB_STRT_DoStartUp import StartUp
+from LIB_SSH import MySSH, SSHFailedToConnect, SSHBadCommand, SSHProgramFailed
+import argparse
+import copy
+import datetime
+import os
+import time
+
+def RunMyCommand(pCMD):
+
+  try:
+    MyRunSSH = MySSH(MyProgram_Hostname)
+    MyRunOutput = MyRunSSH.RunCommand(pCMD)
+
+  except SSHFailedToConnect as MyException:
+    raise SSHFailedToConnect()
+  except SSHBadCommand as MyException:
+    raise SSHBadCommand()
+  except SSHProgramFailed as MyException:
+    raise SSHProgramFailed()
+  else:
+    for line in MyRunOutput:
+      MyProgram.LogMsg('.   -> ' + str(line) )
+
+# =========================================================================================================================
+# ===   ***************************   Start And Stop DbVisit Readonly Snapshot Datbases   ***************************   ===
+# =========================================================================================================================
+
+MyProgram = StartUp()
+
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Start And Stop DbVisit Readonly Snapshot Datbases.')
+MyProgram.LogMsg('. ==================================================')
+MyProgram.LogMsg('.')
+
+# -------------------------------------------------------------------------------------------------------------------------
+# --- Parse Mandatory Parameters                                                                                        ---
+# -------------------------------------------------------------------------------------------------------------------------
+# -m --mode [START|STOP|REMOVE|REFRESH]
+# -d --database [oblv|bklv|ALL]
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Parsing Parameters .....')
+MyParser = argparse.ArgumentParser()
+MyParser.add_argument('-m', '--mode'    , help='Script Mode'    , choices=['START', 'REMOVE', 'REFRESH'], required=True)
+MyParser.add_argument('-d', '--database', help='Target Database', choices=['oblv', 'bklv', 'ALL']               , required=True)
+Myargs = MyParser.parse_args()
+
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('.       Mode [' + Myargs.mode + ']')
+MyProgram.LogMsg('.  Target DB [' + Myargs.database + ']')
+MyProgram.LogMsg('.')
+
+MyProgram_Mode =  Myargs.mode
+MyProgram_DBName =  Myargs.database
+MyProgram_Hostname = 'cab-prod-dbvdb'
+
+MyProgram_Delay = 300
+
+# -------------------------------------------------------------------------------------------------------------------------
+# --- Open SSH Connection to host                                                                                       ---
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('. Connecting To Host : [' + MyProgram_Hostname + '] .....')
+try :
+  MySHObject = MySSH(MyProgram_Hostname)
+  MySSH_ConnectionGood = MySHObject.RunCommand('hostname')
+except SSHFailedToConnect as MyException:
+  raise SSHFailedToConnect()
+except SSHBadCommand as MyException:
+  raise SSHBadCommand()
+except SSHProgramFailed as MyException:
+  raise SSHProgramFailed()
+
+MyProgram.LogMsg('.')
+
+# -------------------------------------------------------------------------------------------------------------------------
+# --- Start the Readonly Snapshots - Assumes the Snapshot is already mounted !!                                         ---
+# -------------------------------------------------------------------------------------------------------------------------
+if MyProgram_Mode == 'START':
+  MyProgram.LogMsg('. Starting Snapshot Database(s) .....')
+  if MyProgram_DBName == 'oblv':
+    MyProgram.LogMsg('.   Starting Database [oblvr001] .....')
+    RunMyCommand("sudo -u oracle sh -c '. /home/oracle/.bash_profile ; /usr/dbvisit/standbymp/oracle/dbvsnap -D start -d oblv'")
+    time.sleep(MyProgram_Delay)
+  elif MyProgram_DBName == 'bklv':
+    MyProgram.LogMsg('.   Starting Database [bklvr001] .....')
+    RunMyCommand("sudo -u oracle sh -c '. /home/oracle/.bash_profile ; /usr/dbvisit/standbymp/oracle/dbvsnap -D start -d bklv'")
+    time.sleep(MyProgram_Delay)
+  elif MyProgram_DBName == 'ALL':
+    MyProgram.LogMsg('.   Starting Database [oblvr001] .....')
+    RunMyCommand("sudo -u oracle sh -c '. /home/oracle/.bash_profile ; /usr/dbvisit/standbymp/oracle/dbvsnap -D start -d oblv'")
+    time.sleep(MyProgram_Delay)
+    MyProgram.LogMsg('.   Starting Database [bklvr001] .....')
+    RunMyCommand("sudo -u oracle sh -c '. /home/oracle/.bash_profile ; /usr/dbvisit/standbymp/oracle/dbvsnap -D start -d bklv'")
+    time.sleep(MyProgram_Delay)
+  else:
+    MyProgram.LogMsg('. Unknown Target Database!')
+    MyProgram.Terminate()
+
+# -------------------------------------------------------------------------------------------------------------------------
+# --- Remove the Readonly Snapshots - Assumes the Snapshot is already Started !!                                        ---
+# -------------------------------------------------------------------------------------------------------------------------
+elif MyProgram_Mode == 'REMOVE':
+  MyProgram.LogMsg('. Removing Snapshot Database(s) .....')
+  if MyProgram_DBName == 'oblv':
+    MyProgram.LogMsg('.   Stoping Database [oblvr001] .....')
+    RunMyCommand("sudo -u oracle sh -c '. /home/oracle/.bash_profile ; /usr/dbvisit/standbymp/oracle/dbvsnap -D stop -d oblv'")
+    MyProgram.LogMsg('.   Waiting [' + str(MyProgram_Delay) + '] Seconds .....')
+    time.sleep(MyProgram_Delay)
+
+    MyProgram.LogMsg('.   Removing Database [oblvr001] .....')
+    RunMyCommand("sudo -u oracle sh -c '. /home/oracle/.bash_profile ; /usr/dbvisit/standbymp/oracle/dbvsnap -D delete -d oblv'")
+    MyProgram.LogMsg('.   Waiting [' + str(MyProgram_Delay) + '] Seconds .....')
+    time.sleep(MyProgram_Delay)
+
+  elif MyProgram_DBName == 'bklv':
+    MyProgram.LogMsg('.   Stoping Database [bklvr001] .....')
+    RunMyCommand("sudo -u oracle sh -c '. /home/oracle/.bash_profile ; /usr/dbvisit/standbymp/oracle/dbvsnap -D stop -d bklv'")
+    MyProgram.LogMsg('.   Waiting [' + str(MyProgram_Delay) + '] Seconds .....')
+    time.sleep(MyProgram_Delay)
+
+    MyProgram.LogMsg('.   Removing Database [bklvr001] .....')
+    RunMyCommand("sudo -u oracle sh -c '. /home/oracle/.bash_profile ; /usr/dbvisit/standbymp/oracle/dbvsnap -D delete -d bklv'")
+    MyProgram.LogMsg('.   Waiting [' + str(MyProgram_Delay) + '] Seconds .....')
+    time.sleep(MyProgram_Delay)
+
+  elif MyProgram_DBName == 'ALL':
+    MyProgram.LogMsg('.   Stoping Database [oblvr001] .....')
+    RunMyCommand("sudo -u oracle sh -c '. /home/oracle/.bash_profile ; /usr/dbvisit/standbymp/oracle/dbvsnap -D stop -d oblv'")
+    MyProgram.LogMsg('.   Waiting [' + str(MyProgram_Delay) + '] Seconds .....')
+    time.sleep(MyProgram_Delay)
+
+    MyProgram.LogMsg('.   Removing Database [oblvr001] .....')
+    RunMyCommand("sudo -u oracle sh -c '. /home/oracle/.bash_profile ; /usr/dbvisit/standbymp/oracle/dbvsnap -D delete -d oblv'")
+    MyProgram.LogMsg('.   Waiting [' + str(MyProgram_Delay) + '] Seconds .....')
+    time.sleep(MyProgram_Delay)
+
+    MyProgram.LogMsg('.   Stoping Database [bklvr001] .....')
+    RunMyCommand("sudo -u oracle sh -c '. /home/oracle/.bash_profile ; /usr/dbvisit/standbymp/oracle/dbvsnap -D stop -d bklv'")
+    MyProgram.LogMsg('.   Waiting [' + str(MyProgram_Delay) + '] Seconds .....')
+    time.sleep(MyProgram_Delay)
+
+    MyProgram.LogMsg('.   Removing Database [bklvr001] .....')
+    RunMyCommand("sudo -u oracle sh -c '. /home/oracle/.bash_profile ; /usr/dbvisit/standbymp/oracle/dbvsnap -D delete -d oblv'")
+    MyProgram.LogMsg('.   Waiting [' + str(MyProgram_Delay) + '] Seconds .....')
+    time.sleep(MyProgram_Delay)
+
+  else:
+    MyProgram.LogMsg('. Unknown Target Database!')
+    MyProgram.Terminate()
+
+# -------------------------------------------------------------------------------------------------------------------------
+# --- Refresh the Readonly Snapshots - Assumes the Snapshot is already Started !!                                       ---
+# -------------------------------------------------------------------------------------------------------------------------
+elif MyProgram_Mode == 'REFRESH':
+  MyProgram.LogMsg('. Refreshing Snapshot Database(s) .....')
+  if MyProgram_DBName == 'oblv':
+    MyProgram.LogMsg('.   Stoping Database [oblvr001] .....')
+    RunMyCommand("sudo -u oracle sh -c '. /home/oracle/.bash_profile ; /usr/dbvisit/standbymp/oracle/dbvsnap -D stop -d oblv'")
+    MyProgram.LogMsg('.   Waiting [' + str(MyProgram_Delay) + '] Seconds .....')
+    time.sleep(MyProgram_Delay)
+
+    MyProgram.LogMsg('.   Removing Database [oblvr001] .....')
+    RunMyCommand("sudo -u oracle sh -c '. /home/oracle/.bash_profile ; /usr/dbvisit/standbymp/oracle/dbvsnap -D delete -d oblv'")
+    MyProgram.LogMsg('.   Waiting [' + str(MyProgram_Delay) + '] Seconds .....')
+    time.sleep(MyProgram_Delay)
+
+    MyProgram.LogMsg('.   ReCreating Database [oblvr001] .....')
+    RunMyCommand("sudo -u oracle sh -c '. /home/oracle/.bash_profile ; /usr/dbvisit/standbymp/oracle/dbvsnap -D start -d oblv'")
+    MyProgram.LogMsg('.   Waiting [' + str(MyProgram_Delay) + '] Seconds .....')
+
+  elif MyProgram_DBName == 'bklv':
+    MyProgram.LogMsg('.   Stoping Database [bklvr001] .....')
+    RunMyCommand("sudo -u oracle sh -c '. /home/oracle/.bash_profile ; /usr/dbvisit/standbymp/oracle/dbvsnap -D stop -d bklv'")
+    MyProgram.LogMsg('.   Waiting [' + str(MyProgram_Delay) + '] Seconds .....')
+    time.sleep(MyProgram_Delay)
+
+    MyProgram.LogMsg('.   Removing Database [bklvr001] .....')
+    RunMyCommand("sudo -u oracle sh -c '. /home/oracle/.bash_profile ; /usr/dbvisit/standbymp/oracle/dbvsnap -D delete -d bklv'")
+    MyProgram.LogMsg('.   Waiting [' + str(MyProgram_Delay) + '] Seconds .....')
+    time.sleep(MyProgram_Delay)
+
+    MyProgram.LogMsg('.   ReCreating Database [bklvr001] .....')
+    RunMyCommand("sudo -u oracle sh -c '. /home/oracle/.bash_profile ; /usr/dbvisit/standbymp/oracle/dbvsnap -D start -d bklv'")
+    MyProgram.LogMsg('.   Waiting [' + str(MyProgram_Delay) + '] Seconds .....')
+
+  elif MyProgram_DBName == 'ALL':
+    MyProgram.LogMsg('.   Stoping Database [oblvr001] .....')
+    RunMyCommand("sudo -u oracle sh -c '. /home/oracle/.bash_profile ; /usr/dbvisit/standbymp/oracle/dbvsnap -D stop -d oblv'")
+    MyProgram.LogMsg('.   Waiting [' + str(MyProgram_Delay) + '] Seconds .....')
+    time.sleep(MyProgram_Delay)
+
+    MyProgram.LogMsg('.   Removing Database [oblvr001] .....')
+    RunMyCommand("sudo -u oracle sh -c '. /home/oracle/.bash_profile ; /usr/dbvisit/standbymp/oracle/dbvsnap -D delete -d oblv'")
+    MyProgram.LogMsg('.   Waiting [' + str(MyProgram_Delay) + '] Seconds .....')
+    time.sleep(MyProgram_Delay)
+
+    MyProgram.LogMsg('.   ReCreating Database [oblvr001] .....')
+    RunMyCommand("sudo -u oracle sh -c '. /home/oracle/.bash_profile ; /usr/dbvisit/standbymp/oracle/dbvsnap -D start -d oblv'")
+    MyProgram.LogMsg('.   Waiting [' + str(MyProgram_Delay) + '] Seconds .....')
+    time.sleep(MyProgram_Delay)
+
+    MyProgram.LogMsg('.   Stoping Database [bklvr001] .....')
+    RunMyCommand("sudo -u oracle sh -c '. /home/oracle/.bash_profile ; /usr/dbvisit/standbymp/oracle/dbvsnap -D stop -d bklv'")
+    MyProgram.LogMsg('.   Waiting [' + str(MyProgram_Delay) + '] Seconds .....')
+    time.sleep(MyProgram_Delay)
+
+    MyProgram.LogMsg('.   Removing Database [bklvr001] .....')
+    RunMyCommand("sudo -u oracle sh -c '. /home/oracle/.bash_profile ; /usr/dbvisit/standbymp/oracle/dbvsnap -D delete -d oblv'")
+    MyProgram.LogMsg('.   Waiting [' + str(MyProgram_Delay) + '] Seconds .....')
+    time.sleep(MyProgram_Delay)
+
+    MyProgram.LogMsg('.   ReCreating Database [bklvr001] .....')
+    RunMyCommand("sudo -u oracle sh -c '. /home/oracle/.bash_profile ; /usr/dbvisit/standbymp/oracle/dbvsnap -D start -d oblv'")
+    MyProgram.LogMsg('.   Waiting [' + str(MyProgram_Delay) + '] Seconds .....')
+    time.sleep(MyProgram_Delay)
+
+  else:
+    MyProgram.LogMsg('. Unknown Target Database!')
+    MyProgram.Terminate()
+
+else:
+  MyProgram.LogMsg('. Unknown Mode!')
+  MyProgram.Terminate()
+
+
+# -------------------------------------------------------------------------------------------------------------------------
+# --- Program Finished - Terminating Now                                                                                ---
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Terminating Program .....')
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('.')
+MyProgram.Terminate()
