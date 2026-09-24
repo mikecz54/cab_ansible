@@ -1,0 +1,1 @@
+ssh cab-prod-amm-db "sudo su - oracle -c '/home/oracle/cab_dba/bin/CABDBA_runjob BackupRMAN_Level0'"
