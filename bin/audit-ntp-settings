@@ -1,0 +1,82 @@
+#! /usr/bin/python
+
+import argparse
+import re
+import datetime
+import os
+
+from LIB_STRT_DoStartUp import StartUp
+from LIB_SSH import SSHFailedToConnect, SSHBadCommand, SSHProgramFailed
+from LIB_SSH import MySSH, SSHFailedToConnect, SSHBadCommand, SSHProgramFailed
+
+# =========================================================================================================================
+# ===   ******************************   RedHat Package Reportsitories   ********************************************   ===
+# =========================================================================================================================
+
+MyProgram = StartUp()
+
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Check Repository Information.')
+MyProgram.LogMsg('. =============================')
+MyProgram.LogMsg('.')
+
+MyServerList = ['usldynagt11',     'psldynagt11',       'psldynagt12',    'psldynsyn11', \
+                'usldynagt21',     'usldynsyn21',       'psldynagt21',    'psldynagt22', 'psldynsyn21', \
+                'cab-ltc-praeng',  'cab-ltc-ntp',       'cab-tc2-praeng', 'cab-tc2-ntp', \
+                'cab-prod-syslog', 'cab-prod-repo', \
+                'cab-uat-amm-db',  'cab-uat-amm-app', \
+                'cab-uat-cbs-db',  'cab-uat-cbs-app2',  'cab-uat-cbsig', \
+                'cab-uat2-cbs-db', 'cab-uat2-cbs-app2', \
+                'cab-prod-dbvc',   'cab-prod-dbvdb', \
+                'cab-prod-amm-db', 'cab-prod-amm-app', \
+                'cab-prod-cbs-db', 'cab-prod-cbs-app2', 'cab-prod-cbsig', \
+                'cab-prod-infral', \
+                'cab-prod-sre',    'cab-prod-synth',    'cab-prod-dtag' ]
+
+for MyProgram_Hostname in MyServerList:
+
+  # -------------------------------------------------------------------------------------------------------------------------
+  # --- Test Connection To Host                                                                                           ---
+  # -------------------------------------------------------------------------------------------------------------------------
+  MyProgram.LogMsg('.')
+  MyProgram.LogMsg('. Connecting To Host : [' + MyProgram_Hostname + '] .....')
+  try :
+    MySHObject = MySSH(MyProgram_Hostname)
+    MySSH_ConnectionGood = MySHObject.RunCommand('hostname')
+  except SSHFailedToConnect as MyException:
+    raise SSHFailedToConnect()
+  except SSHBadCommand as MyException:
+    raise SSHBadCommand()
+  except SSHProgramFailed as MyException:
+    raise SSHProgramFailed()
+
+  # -------------------------------------------------------------------------------------------------------------------------
+  # --- Do The Repostory Checks                                                                                           ---
+  # -------------------------------------------------------------------------------------------------------------------------
+  MyProgram.LogMsg('. Checking Chrony Status .....')
+  try :
+    MySHObject = MySSH(MyProgram_Hostname)
+    MySSH_RepoStatus = MySHObject.RunCommand('sudo chronyc sourcestats')
+  except SSHFailedToConnect as MyException:
+    raise SSHFailedToConnect()
+  except SSHBadCommand as MyException:
+    raise SSHBadCommand()
+  except SSHProgramFailed as MyException:
+    raise SSHProgramFailed()
+  else:
+    for line in MySSH_RepoStatus:
+      if re.search('^Name/IP Address', line):
+        pass
+      elif re.search('^=', line):
+        pass
+      else:
+        MyProgram.LogMsg('.    ' + str(MyProgram_Hostname) + ' : ' + str(line) )
+
+# -------------------------------------------------------------------------------------------------------------------------
+# --- Program Finished - Terminating Now                                                                                ---
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Terminating Program .....')
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('.')
+MyProgram.Terminate()
