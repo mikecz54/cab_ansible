@@ -1,0 +1,73 @@
+# ================================================================================
+# ====       Crown Agents Bank -      SUDOERS Configuration File              ====
+# ==== ---------------------------------------------------------------------- ====
+# ====      Filename : CAB-2200-PRDSRV-APPSUP                                 ====
+# ==== OS Group Name : prdsrv-appsup                                          ====
+# ====   OS Group ID : 2200                                                   ====
+# ====                                                                        ====
+# ====  Notes : Rules for Production Support - Application Support            ====
+# ====          Rule to allow access to Oracle on Specific Hosts              ====
+# ==== ---------------------------------------------------------------------- ====
+# ==== G.Id    U.Id   Username         Who                                    ====
+# ==== ----    ----   ---------------- -------------------------------------- ====
+# ==== 2200    2201   dbenjamin         Debbie Benjamin                       ====
+# ==== 2200    2202   rgame             Richard Game                          ====
+# ==== 2200    2203   skarunakaran      Sunil Karunakaran                     ====
+# ==== 2200    2204   amohamed          Abdul Mohamed                         ====
+# ================================================================================
+
+# --------------------------------------------------------------------------------
+# ---- Member (users)                                                         ----
+# --------------------------------------------------------------------------------
+User_Alias PRDSRV-APPSUP-MEMBERS= dbenjamin, rgame, skarunakaran, amohamed
+
+# --------------------------------------------------------------------------------
+# ---- Targets (hosts)                                                        ----
+# --------------------------------------------------------------------------------
+Host_Alias PRDSRV-APPSUP-HOSTS-CBSDB-UAT = cab-uat-cbs-db, cab-uat2-cbs-db
+Host_Alias PRDSRV-APPSUP-HOSTS-CBSAP-UAT = cab-uat-cbs-app2, cab-uat2-cbs-app2
+Host_Alias PRDSRV-APPSUP-HOSTS-CBSDB-PRD = cab-prod-cbs-db
+Host_Alias PRDSRV-APPSUP-HOSTS-CBSAP-PRD = cab-prod-cbs-app2
+
+Host_Alias PRDSRV-APPSUP-HOSTS-AMMDB-UAT = cab-uat-amm-db
+Host_Alias PRDSRV-APPSUP-HOSTS-AMMAP-UAT = cab-uat-amm-app
+Host_Alias PRDSRV-APPSUP-HOSTS-AMMDB-PRD = cab-prod-amm-db
+Host_Alias PRDSRV-APPSUP-HOSTS-AMMAP-PRD = cab-prod-amm-app
+
+Host_Alias PRDSRV-APPSUP-HOSTS-CBSIG-UAT = cab-uat-cbsig
+Host_Alias PRDSRV-APPSUP-HOSTS-CBSIG-PRD = cab-prod-cbsig
+
+# --------------------------------------------------------------------------------
+# ---- Allowed SU accounts                                                    ----
+# --------------------------------------------------------------------------------
+Cmnd_Alias PRDSRV-APPSUP-SU-CBSDB-UAT=/usr/bin/su - oracle
+Cmnd_Alias PRDSRV-APPSUP-SU-CBSAP-UAT=/usr/bin/su - oracle
+
+Cmnd_Alias PRDSRV-APPSUP-SU-CBSDB-PRD=/usr/bin/su - oracle
+Cmnd_Alias PRDSRV-APPSUP-SU-CBSAP-PRD=/usr/bin/su - oracle
+
+Cmnd_Alias PRDSRV-APPSUP-SU-CBSIG-UAT=/usr/bin/su - oracle
+Cmnd_Alias PRDSRV-APPSUP-SU-CBSIG-PRD=/usr/bin/su - oracle
+
+# --------------------------------------------------------------------------------
+# ---- Specific Commands Allowed                                              ----
+# --------------------------------------------------------------------------------
+
+# --------------------------------------------------------------------------------
+# ---- Mappings                                                               ----
+# --------------------------------------------------------------------------------
+# Can sudo su to oracle on UAT and PROD CBS Servers
+PRDSRV-APPSUP-MEMBERS   PRDSRV-APPSUP-HOSTS-CBSDB-UAT=(ALL)     NOPASSWD: PRDSRV-APPSUP-SU-CBSDB-UAT
+PRDSRV-APPSUP-MEMBERS   PRDSRV-APPSUP-HOSTS-CBSAP-UAT=(ALL)     NOPASSWD: PRDSRV-APPSUP-SU-CBSAP-UAT
+PRDSRV-APPSUP-MEMBERS   PRDSRV-APPSUP-HOSTS-CBSDB-PRD=(ALL)     NOPASSWD: PRDSRV-APPSUP-SU-CBSDB-PRD
+PRDSRV-APPSUP-MEMBERS   PRDSRV-APPSUP-HOSTS-CBSAP-PRD=(ALL)     NOPASSWD: PRDSRV-APPSUP-SU-CBSAP-PRD
+
+# Can sudo su to oracle on UAT and PROD AMM Servers
+PRDSRV-APPSUP-MEMBERS   PRDSRV-APPSUP-HOSTS-AMMDB-UAT=(ALL)     NOPASSWD: PRDSRV-APPSUP-SU-AMMDB-UAT
+PRDSRV-APPSUP-MEMBERS   PRDSRV-APPSUP-HOSTS-AMMAP-UAT=(ALL)     NOPASSWD: PRDSRV-APPSUP-SU-AMMAP-UAT
+PRDSRV-APPSUP-MEMBERS   PRDSRV-APPSUP-HOSTS-AMMDB-PRD=(ALL)     NOPASSWD: PRDSRV-APPSUP-SU-AMMDB-PRD
+PRDSRV-APPSUP-MEMBERS   PRDSRV-APPSUP-HOSTS-AMMAP-PRD=(ALL)     NOPASSWD: PRDSRV-APPSUP-SU-AMMAP-PRD
+
+# Can sudo su to oracle on UAT and PROD CBSIG Servers
+PRDSRV-APPSUP-MEMBERS   PRDSRV-APPSUP-HOSTS-CBSIG-UAT=(ALL)     NOPASSWD: PRDSRV-APPSUP-SU-CBSIG-UAT
+PRDSRV-APPSUP-MEMBERS   PRDSRV-APPSUP-HOSTS-CBSIG-PRD=(ALL)     NOPASSWD: PRDSRV-APPSUP-SU-CBSIG-PRD
