@@ -1,0 +1,413 @@
+#! /usr/bin/python
+
+from LIB_STRT_DoStartUp import StartUp
+from LIB_SSH import MySSH, SSHFailedToConnect, SSHBadCommand, SSHProgramFailed
+import copy
+import datetime
+import os
+
+# =========================================================================================================================
+# ===   *********************************   Stop CBS UAT  Environment   *********************************************   ===
+# =========================================================================================================================
+
+MyProgram = StartUp()
+
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. STOP CBS UAT Environment')
+MyProgram.LogMsg('. ========================')
+MyProgram.LogMsg('.')
+
+MyProgram_Hostname_Database = 'cab-uat-cbs-db'
+MyProgram_Hostname_WebLogic = 'cab-uat-cbs-app2'
+MyProgram_Hostname_IG = 'cab-uat-cbsig'
+MyProgram_Hostname_AMM_Database = 'cab-uat-amm-db'
+MyProgram_Hostname_AMM_Apps = 'cab-uat-amm-app'
+
+# -------------------------------------------------------------------------------------------------------------------------
+# --- Test Connection To DB Host                                                                                        ---
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Connecting To Host : [' + MyProgram_Hostname_Database + '] .....')
+try :
+  MyProgram_SSH_DB_object = MySSH(MyProgram_Hostname_Database)
+  MySSH_ConnectionGood = MyProgram_SSH_DB_object.RunCommand('hostname')
+except SSHFailedToConnect as MyException:
+  raise SSHFailedToConnect()
+except SSHBadCommand as MyException:
+  raise SSHBadCommand()
+except SSHProgramFailed as MyException:
+  raise SSHProgramFailed()
+
+# -------------------------------------------------------------------------------------------------------------------------
+# --- Test Connection To WebLogic Host                                                                                  ---
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Connecting To Host : [' + MyProgram_Hostname_WebLogic + '] .....')
+try :
+  MyProgram_SSH_APP_object = MySSH(MyProgram_Hostname_WebLogic)
+  MySSH_ConnectionGood = MyProgram_SSH_APP_object.RunCommand('hostname')
+except SSHFailedToConnect as MyException:
+  raise SSHFailedToConnect()
+except SSHBadCommand as MyException:
+  raise SSHBadCommand()
+except SSHProgramFailed as MyException:
+  raise SSHProgramFailed()
+
+# -------------------------------------------------------------------------------------------------------------------------
+# --- Test Connection To IG Host                                                                                        ---
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Connecting To Host : [' + MyProgram_Hostname_IG + '] .....')
+try :
+  MyProgram_SSH_IG_object = MySSH(MyProgram_Hostname_IG)
+  MySSH_ConnectionGood = MyProgram_SSH_IG_object.RunCommand('hostname')
+except SSHFailedToConnect as MyException:
+  raise SSHFailedToConnect()
+except SSHBadCommand as MyException:
+  raise SSHBadCommand()
+except SSHProgramFailed as MyException:
+  raise SSHProgramFailed()
+
+# -------------------------------------------------------------------------------------------------------------------------
+# --- Test Connection To AMM DB Host                                                                                    ---
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Connecting To Host : [' + MyProgram_Hostname_AMM_Database + '] .....')
+try :
+  MyProgram_SSH_AMMDB_object = MySSH(MyProgram_Hostname_AMM_Database)
+  MySSH_ConnectionGood = MyProgram_SSH_IG_object.RunCommand('hostname')
+except SSHFailedToConnect as MyException:
+  raise SSHFailedToConnect()
+except SSHBadCommand as MyException:
+  raise SSHBadCommand()
+except SSHProgramFailed as MyException:
+  raise SSHProgramFailed()
+
+# -------------------------------------------------------------------------------------------------------------------------
+# --- Test Connection To AMM Application Server                                                                         ---
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Connecting To Host : [' + MyProgram_Hostname_AMM_Apps + '] .....')
+try :
+  MyProgram_SSH_AMMAPP_object = MySSH(MyProgram_Hostname_AMM_Apps)
+  MySSH_ConnectionGood = MyProgram_SSH_IG_object.RunCommand('hostname')
+except SSHFailedToConnect as MyException:
+  raise SSHFailedToConnect()
+except SSHBadCommand as MyException:
+  raise SSHBadCommand()
+except SSHProgramFailed as MyException:
+  raise SSHProgramFailed()
+
+
+# -------------------------------------------------------------------------------------------------------------------------
+# --- Stop AMM Application Services                                                                                     ---
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Stopping AMM Application Service(s) .....')
+
+MyProgram.LogMsg('.   Stopping JBOSS Service obut1 - CUSTOMER and ADMIN .....')
+try :
+  MyProgram_Stop_WebLogic = MyProgram_SSH_AMMAPP_object.RunCommand("sudo -u jboss sh -c '/dataarea1/app/scripts/AMM_stop_ALL.sh'")
+except SSHFailedToConnect as MyException:
+  raise SSHFailedToConnect()
+except SSHBadCommand as MyException:
+  raise SSHBadCommand()
+except SSHProgramFailed as MyException:
+  raise SSHProgramFailed()
+#else:
+#  for line in MyProgram_Stop_WebLogic:
+#    MyProgram.LogMsg('.   -> ' + str(line))
+
+MyProgram.LogMsg('.   Stopping JBOSS Service obut3 - CUSTOMER and ADMIN .....')
+try :
+  MyProgram_Stop_WebLogic = MyProgram_SSH_AMMAPP_object.RunCommand("sudo -u jboss3 sh -c '/dataarea1/app/scripts/AMM_stop_ALL3.sh'")
+except SSHFailedToConnect as MyException:
+  raise SSHFailedToConnect()
+except SSHBadCommand as MyException:
+  raise SSHBadCommand()
+except SSHProgramFailed as MyException:
+  raise SSHProgramFailed()
+#else:
+#  for line in MyProgram_Stop_WebLogic:
+#    MyProgram.LogMsg('.   -> ' + str(line))
+
+# -------------------------------------------------------------------------------------------------------------------------
+# --- Stop WebLogic Services and Database                                                                               ---
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Stopping IF-Agent Service(s) .....')
+
+MyProgram.LogMsg('.   Stopping IF-Agent Service bkut1 .....')
+try :
+  MyProgram_Stop_WebLogic = MyProgram_SSH_APP_object.RunCommand("sudo systemctl stop if_bkut1.service")
+except SSHFailedToConnect as MyException:
+  raise SSHFailedToConnect()
+except SSHBadCommand as MyException:
+  raise SSHBadCommand()
+except SSHProgramFailed as MyException:
+  raise SSHProgramFailed()
+else:
+  for line in MyProgram_Stop_WebLogic:
+    MyProgram.LogMsg('.   -> ' + str(line))
+
+MyProgram.LogMsg('.   Stopping IF-Agent Service bkut3 .....')
+try :
+  MyProgram_Stop_WebLogic = MyProgram_SSH_APP_object.RunCommand("sudo systemctl stop if_bkut3.service")
+except SSHFailedToConnect as MyException:
+  raise SSHFailedToConnect()
+except SSHBadCommand as MyException:
+  raise SSHBadCommand()
+except SSHProgramFailed as MyException:
+  raise SSHProgramFailed()
+else:
+  for line in MyProgram_Stop_WebLogic:
+    MyProgram.LogMsg('.   -> ' + str(line))
+
+MyProgram.LogMsg('.   Stopping IF-Agent Service bkut4 .....')
+try :
+  MyProgram_Stop_WebLogic = MyProgram_SSH_APP_object.RunCommand("sudo systemctl stop if_bkut4.service")
+except SSHFailedToConnect as MyException:
+  raise SSHFailedToConnect()
+except SSHBadCommand as MyException:
+  raise SSHBadCommand()
+except SSHProgramFailed as MyException:
+  raise SSHProgramFailed()
+else:
+  for line in MyProgram_Stop_WebLogic:
+    MyProgram.LogMsg('.   -> ' + str(line))
+
+MyProgram.LogMsg('.   Stopping IF-Agent Service bkut5 .....')
+try :
+  MyProgram_Stop_WebLogic = MyProgram_SSH_APP_object.RunCommand("sudo systemctl stop if_bkut5.service")
+except SSHFailedToConnect as MyException:
+  raise SSHFailedToConnect()
+except SSHBadCommand as MyException:
+  raise SSHBadCommand()
+except SSHProgramFailed as MyException:
+  raise SSHProgramFailed()
+else:
+  for line in MyProgram_Stop_WebLogic:
+    MyProgram.LogMsg('.   -> ' + str(line))
+
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Stopping WebLogic Service(s) .....')
+try :
+  MyProgram_Stop_WebLogic = MyProgram_SSH_APP_object.RunCommand("sudo -u oracle sh -c '/home/oracle/.bash_profile ; /home/oracle/scripts/stop_WLS_FR.sh'")
+except SSHFailedToConnect as MyException:
+  raise SSHFailedToConnect()
+except SSHBadCommand as MyException:
+  raise SSHBadCommand()
+except SSHProgramFailed as MyException:
+  raise SSHProgramFailed()
+else:
+  for line in MyProgram_Stop_WebLogic:
+    MyProgram.LogMsg('.   -> ' + str(line))
+
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Stopping WebLogic Local Database')
+try :
+  MyProgram_Stop_WebLogicDB = MyProgram_SSH_APP_object.RunCommand("sudo -u oracle sh -c '/home/oracle/.bash_profile ; /dataarea1/app/oracle/product/DB19/bin/dbshut /dataarea1/app/oracle/product/DB19'")
+except SSHFailedToConnect as MyException:
+  raise SSHFailedToConnect()
+except SSHBadCommand as MyException:
+  raise SSHBadCommand()
+except SSHProgramFailed as MyException:
+  raise SSHProgramFailed()
+else:
+  for line in MyProgram_Stop_WebLogicDB:
+    MyProgram.LogMsg('.   -> ' + str(line))
+
+# -------------------------------------------------------------------------------------------------------------------------
+# --- Stop CBS Integration Services                                                                                     ---
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Stopping CBS-IG Service(s) .....')
+
+MyProgram.LogMsg('.   Stopping IG Service bkut1 .....')
+try :
+  MyProgram_Stop_IGServ = MyProgram_SSH_IG_object.RunCommand("sudo systemctl stop cbsig1.service")
+except SSHFailedToConnect as MyException:
+  raise SSHFailedToConnect()
+except SSHBadCommand as MyException:
+  raise SSHBadCommand()
+except SSHProgramFailed as MyException:
+  raise SSHProgramFailed()
+else:
+  for line in MyProgram_Stop_IGServ:
+    MyProgram.LogMsg('.   -> ' + str(line))
+
+MyProgram.LogMsg('.   Stopping IG Service bkut2 .....')
+try :
+  MyProgram_Stop_IGServ = MyProgram_SSH_IG_object.RunCommand("sudo systemctl stop cbsig2.service")
+except SSHFailedToConnect as MyException:
+  raise SSHFailedToConnect()
+except SSHBadCommand as MyException:
+  raise SSHBadCommand()
+except SSHProgramFailed as MyException:
+  raise SSHProgramFailed()
+else:
+  for line in MyProgram_Stop_IGServ:
+    MyProgram.LogMsg('.   -> ' + str(line))
+
+MyProgram.LogMsg('.   Stopping IG Service bkut3 .....')
+try :
+  MyProgram_Stop_IGServ = MyProgram_SSH_IG_object.RunCommand("sudo systemctl stop cbsig3.service")
+except SSHFailedToConnect as MyException:
+  raise SSHFailedToConnect()
+except SSHBadCommand as MyException:
+  raise SSHBadCommand()
+except SSHProgramFailed as MyException:
+  raise SSHProgramFailed()
+else:
+  for line in MyProgram_Stop_IGServ:
+    MyProgram.LogMsg('.   -> ' + str(line))
+
+MyProgram.LogMsg('.   Stopping IG Service bkut4 .....')
+try :
+  MyProgram_Stop_IGServ = MyProgram_SSH_IG_object.RunCommand("sudo systemctl stop cbsig4.service")
+except SSHFailedToConnect as MyException:
+  raise SSHFailedToConnect()
+except SSHBadCommand as MyException:
+  raise SSHBadCommand()
+except SSHProgramFailed as MyException:
+  raise SSHProgramFailed()
+else:
+  for line in MyProgram_Stop_IGServ:
+    MyProgram.LogMsg('.   -> ' + str(line))
+
+# -------------------------------------------------------------------------------------------------------------------------
+# --- Stop DbVisit Standby Database DR - AMM                                                                            ---
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Stopping AMM DbVisit Standby Database(s)')
+
+MyProgram.LogMsg('.   Stopping AMM DbVisit Standby Database - oblv')
+try :
+  MyProgram_Stop_Database = MyProgram_SSH_AMMDB_object.RunCommand("sudo -u oracle sh -c '/home/oracle/.bash_profile ; /usr/dbvisit/standbymp/oracle/dbvctl -d oblv -o stop'")
+except SSHFailedToConnect as MyException:
+  raise SSHFailedToConnect()
+except SSHBadCommand as MyException:
+  raise SSHBadCommand()
+except SSHProgramFailed as MyException:
+  raise SSHProgramFailed()
+#else:
+#  for line in MyProgram_Stop_Database:
+#    MyProgram.LogMsg('.   -> ' + str(line))
+
+MyProgram.LogMsg('.   Stopping AMM DbVisit Standby Database - oblvuat')
+try :
+  MyProgram_Stop_Database = MyProgram_SSH_AMMDB_object.RunCommand("sudo -u oracle sh -c '/home/oracle/.bash_profile ; /usr/dbvisit/standbymp/oracle/dbvctl -d oblvuat -o stop'")
+except SSHFailedToConnect as MyException:
+  raise SSHFailedToConnect()
+except SSHBadCommand as MyException:
+  raise SSHBadCommand()
+except SSHProgramFailed as MyException:
+  raise SSHProgramFailed()
+else:
+  for line in MyProgram_Stop_Database:
+    MyProgram.LogMsg('.   -> ' + str(line))
+
+MyProgram.LogMsg('.   Stopping AMM DbVisit Manager')
+try :
+  MyProgram_Stop_Database = MyProgram_SSH_AMMDB_object.RunCommand("sudo /usr/dbvisit/standbymp/bin/dbvagentmanager service stop")
+except SSHFailedToConnect as MyException:
+  raise SSHFailedToConnect()
+except SSHBadCommand as MyException:
+  raise SSHBadCommand()
+except SSHProgramFailed as MyException:
+  raise SSHProgramFailed()
+else:
+  for line in MyProgram_Stop_Database:
+    MyProgram.LogMsg('.   -> ' + str(line))
+
+# -------------------------------------------------------------------------------------------------------------------------
+# --- Stop AMM Database                                                                                                 ---
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Stopping AMM Database(s)')
+try :
+  MyProgram_Stop_Database = MyProgram_SSH_AMMDB_object.RunCommand("sudo -u oracle sh -c '/home/oracle/.bash_profile ; /dataarea1/app/oracle/product/DB19/bin/dbshut /dataarea1/app/oracle/product/DB19'")
+except SSHFailedToConnect as MyException:
+  raise SSHFailedToConnect()
+except SSHBadCommand as MyException:
+  raise SSHBadCommand()
+except SSHProgramFailed as MyException:
+  raise SSHProgramFailed()
+else:
+  for line in MyProgram_Stop_Database:
+    MyProgram.LogMsg('.   -> ' + str(line))
+
+# -------------------------------------------------------------------------------------------------------------------------
+# --- Stop DbVisit Standby Database DR - CBS                                                                            ---
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Stopping CBS DbVisit Standby Database(s)')
+
+MyProgram.LogMsg('.   Stopping CBS DbVisit Standby Database - bklv')
+try :
+  MyProgram_Stop_Database = MyProgram_SSH_DB_object.RunCommand("sudo -u oracle sh -c '/home/oracle/.bash_profile ; /usr/dbvisit/standbymp/oracle/dbvctl -d bklv -o stop'")
+except SSHFailedToConnect as MyException:
+  raise SSHFailedToConnect()
+except SSHBadCommand as MyException:
+  raise SSHBadCommand()
+except SSHProgramFailed as MyException:
+  raise SSHProgramFailed()
+#else:
+#  for line in MyProgram_Stop_Database:
+#    MyProgram.LogMsg('.   -> ' + str(line))
+
+MyProgram.LogMsg('.   Stopping CBS DbVisit Standby Database - bklvuat')
+try :
+  MyProgram_Stop_Database = MyProgram_SSH_DB_object.RunCommand("sudo -u oracle sh -c '/home/oracle/.bash_profile ; /usr/dbvisit/standbymp/oracle/dbvctl -d bklvuat -o stop'")
+except SSHFailedToConnect as MyException:
+  raise SSHFailedToConnect()
+except SSHBadCommand as MyException:
+  raise SSHBadCommand()
+except SSHProgramFailed as MyException:
+  raise SSHProgramFailed()
+else:
+  for line in MyProgram_Stop_Database:
+    MyProgram.LogMsg('.   -> ' + str(line))
+
+MyProgram.LogMsg('.   Stopping CBS DbVisit Manager')
+try :
+  MyProgram_Stop_Database = MyProgram_SSH_DB_object.RunCommand("sudo /usr/dbvisit/standbymp/bin/dbvagentmanager service stop")
+except SSHFailedToConnect as MyException:
+  raise SSHFailedToConnect()
+except SSHBadCommand as MyException:
+  raise SSHBadCommand()
+except SSHProgramFailed as MyException:
+  raise SSHProgramFailed()
+else:
+  for line in MyProgram_Stop_Database:
+    MyProgram.LogMsg('.   -> ' + str(line))
+
+# -------------------------------------------------------------------------------------------------------------------------
+# --- Stop CBS Database                                                                                                 ---
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Stopping CBS Database(s)')
+try :
+  MyProgram_Stop_Database = MyProgram_SSH_DB_object.RunCommand("sudo -u oracle sh -c '/home/oracle/.bash_profile ; /dataarea1/app/oracle/product/DB19/bin/dbshut /dataarea1/app/oracle/product/DB19'")
+except SSHFailedToConnect as MyException:
+  raise SSHFailedToConnect()
+except SSHBadCommand as MyException:
+  raise SSHBadCommand()
+except SSHProgramFailed as MyException:
+  raise SSHProgramFailed()
+else:
+  for line in MyProgram_Stop_Database:
+    MyProgram.LogMsg('.   -> ' + str(line))
+
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Stopped CBS WebLogic, Database; AMM JBOSS, Database, IG Services - Ready For Patching')
+
+# -------------------------------------------------------------------------------------------------------------------------
+# --- Program Finished - Terminating Now                                                                                ---
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Terminating Program .....')
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('.')
+MyProgram.Terminate()
+
