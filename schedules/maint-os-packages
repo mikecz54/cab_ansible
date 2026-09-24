@@ -1,0 +1,18 @@
+/home/cab_ansible/CAB_ADMIN/bin/maint-os-packages usldynagt11        --reboot --summary
+/home/cab_ansible/CAB_ADMIN/bin/maint-os-packages psldynagt11        --reboot --summary
+/home/cab_ansible/CAB_ADMIN/bin/maint-os-packages psldynagt12        --reboot --summary
+/home/cab_ansible/CAB_ADMIN/bin/maint-os-packages psldynsyn11        --reboot --summary
+/home/cab_ansible/CAB_ADMIN/bin/maint-os-packages cab-ltc-praeng     --reboot --summary
+/home/cab_ansible/CAB_ADMIN/bin/maint-os-packages cab-ltc-ntp        --reboot --summary
+/home/cab_ansible/CAB_ADMIN/bin/maint-os-packages psldelpem11        --reboot --summary
+
+/home/cab_ansible/CAB_ADMIN/bin/maint-os-packages usldynagt21        --reboot --summary
+/home/cab_ansible/CAB_ADMIN/bin/maint-os-packages usldynsyn21        --reboot --summary
+/home/cab_ansible/CAB_ADMIN/bin/maint-os-packages psldynagt21        --reboot --summary
+/home/cab_ansible/CAB_ADMIN/bin/maint-os-packages psldynagt22        --reboot --summary
+/home/cab_ansible/CAB_ADMIN/bin/maint-os-packages psldynsyn21        --reboot --summary
+/home/cab_ansible/CAB_ADMIN/bin/maint-os-packages cab-tc2-praeng     --reboot --summary
+/home/cab_ansible/CAB_ADMIN/bin/maint-os-packages cab-tc2-ntp        --reboot --summary
+/home/cab_ansible/CAB_ADMIN/bin/maint-os-packages psldelpem21        --reboot --summary
+
+/home/cab_ansible/CAB_ADMIN/bin/maint-os-packages cab-prod-syslog    --reboot --summary
