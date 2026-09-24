@@ -1,0 +1,12 @@
+# -------------------------------------------------------------------------------------------------
+# --- CBS UAT2 Environment - OS Patching                                                        ---
+# -------------------------------------------------------------------------------------------------
+/home/cab_ansible/CAB_ADMIN/tools/StopCBS-UAT2
+
+/home/cab_ansible/CAB_ADMIN/bin/maint-os-packages cab-uat2-cbs-db        --summary
+/home/cab_ansible/CAB_ADMIN/tools/Reboot-Host     -t cab-uat2-cbs-db
+sleep 300
+
+/home/cab_ansible/CAB_ADMIN/bin/maint-os-packages cab-uat2-cbs-app2      --summary
+/home/cab_ansible/CAB_ADMIN/tools/Reboot-Host     -t cab-uat2-cbs-app2
+sleep 300
