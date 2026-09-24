@@ -1,0 +1,593 @@
+#! /usr/bin/python
+
+from LIB_STRT_DoStartUp import StartUp
+from LIB_SSH import MySSH, SSHFailedToConnect, SSHBadCommand, SSHProgramFailed
+import copy
+import datetime
+import os
+
+# =========================================================================================================================
+# ===   *********************************   RedHat OS User Auditing   ***********************************************   ===
+# =========================================================================================================================
+
+MyProgram = StartUp()
+
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. RedHat OS User Audit.')
+MyProgram.LogMsg('. =====================')
+MyProgram.LogMsg('.')
+
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Declaring Static Arrays .....')
+
+MyServerList=['usldynagt11',     'psldynagt11',       'psldynagt12',    'psldynsyn11', \
+              'usldynagt21',     'usldynsyn21',       'psldynagt21',    'psldynagt22', 'psldynsyn21', \
+              'cab-ltc-praeng',  'cab-ltc-ntp',       'cab-tc2-praeng', 'cab-tc2-ntp', \
+              'psldelpem11',     'psldelpem11',   \
+              'cab-prod-syslog', 'cab-prod-repo', \
+              'cab-uat-amm-db',  'cab-uat-amm-app', \
+              'cab-uat-cbs-db',  'cab-uat-cbs-app2',  'cab-uat-cbsig', \
+#             'cab-uat2-cbs-db', \
+              'cab-uat2-cbs-app2', \
+              'cab-prod-dbvc',   'cab-prod-dbvdb', \
+              'cab-prod-amm-db', 'cab-prod-amm-app', \
+              'cab-prod-cbs-db', 'cab-prod-cbs-app2', 'cab-prod-cbsig', \
+              'cab-prod-infral' ]
+
+MyInfraSupport = ['rmagistrelli', 'adikko', 'amina', 'mczerniak', 'aalbakri' ]
+MyAppSupport   = ['dbenjamin', 'rgame', 'skarunakaran', 'amohamed', 'eahmad', 'cab_prdsup_appsup', 'cab_prdsrv_appsup' ]
+MyDynSupport   = ['mwright', 'aponnampala' ]
+
+MyPPT = ['ppt' ]
+MyDSP = ['dsp_dba_admin', 'vensup_dsp_dba' ]
+MySLUsers = ['vladimir' ]
+
+MySLApp = ['ifagent', 'jboss', 'opendj', 'ispops', 'jboss3', 'ispops3', 'cbsig3', 'cbsig1', 'cbsig2', 'cbsig4', 'catalina', 'dxc' ]
+
+MyDynatraceApp = ['dtuserag', 'dtuser' ]
+MyTenableApp   = ['tenabletag', 'tenable_tua_comm', 'svc_tenable' ]
+MySophosApp    = ['sophos-spl-user', 'sophos-spl-local', 'sophos-spl-updatescheduler', 'sophos-spl-av', 'sophos-spl-threat-detector' ]
+MyDelineaApp   = ['delinea' ]
+
+MyOracleApp    = ['oracle' ,'operdba', 'cab_dba' ]
+MyInfraApp     = ['mysql', 'caddy', 'cab_ansible', 'veeam-usr-deploymentvcp', 'veeam-usr-transportsvc', 'qemu', 'cabansible' ]
+
+MyLinuxCore    = ['root', 'bin', 'daemon', 'adm', 'sync', 'shutdown', 'halt', 'operator', 'nobody', 'lp', 'systemd-coredump', 'dbus', 'systemd-resolve' ]
+MyLinuxAdds    = ['chrony', 'sshd' ]
+MyLinuxCoreNA  = ['games', 'ftp', 'ntp', 'fapolicyd', 'mail', 'tss', 'unbound', 'polkitd', 'rpc', 'rpcuser', 'postfix', 'sssd', 'rtkit', 'pipewire', 'avahi', 'geoclue', 'flatpak', 'apache', 'nagios', 'nginx', 'systemd-network', 'libstoragemgmt', 'gluster', 'usbmuxd', 'radvd', 'colord', 'abrt', 'saslauth', 'saned', 'pulse', 'gdm', 'setroubleshoot', 'gnome-initial-setup', 'tcpdump', 'nfsnobody', 'dnsmasq', 'cockpit-ws', 'cockpit-wsinstance', 'mailnull', 'smmsp', 'clevis', 'stapunpriv', 'prodsre', 'jtovarys', 'openscap' ]
+
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Declaring User Keys And Values Array .....')
+MyHostArrayKeys = []
+MyHostArrayValues = []
+
+for MyProgram_Hostname in MyServerList:
+  MyHostArrayKeys.append(MyProgram_Hostname)
+  MyHostArrayValues.append(None)
+
+MyProgram.LogMsg('. Declaring User Matrix .....')
+MyProgram.LogMsg('.')
+
+MyUserMatrix = {}
+MyUserMatrix['USERNAMES'] = []
+MyUserMatrix['USERNAMES'] = copy.deepcopy(MyHostArrayKeys)
+
+MyProgram.LogMsg('. Declaring User Infra Accounts Array .....')
+MyReportUserInfra = {}
+MyReportUserInfra['USERNAMES'] = copy.deepcopy(MyHostArrayKeys)
+
+MyProgram.LogMsg('. Declaring User App Support Accounts Array .....')
+MyReportUserAppSup = {}
+MyReportUserAppSup['USERNAMES'] = copy.deepcopy(MyHostArrayKeys)
+
+MyProgram.LogMsg('. Declaring User Dynatrace Support Accounts Array .....')
+MyReportUserDynSupp = {}
+MyReportUserDynSupp['USERNAMES'] = copy.deepcopy(MyHostArrayKeys)
+
+MyProgram.LogMsg('. Declaring User PPT Support Accounts Array .....')
+MyReportUserPPT = {}
+MyReportUserDynSupp['USERNAMES'] = copy.deepcopy(MyHostArrayKeys)
+
+MyProgram.LogMsg('. Declaring User DSP Support Accounts Array .....')
+MyReportUserDSP = {}
+MyReportUserDynSupp['USERNAMES'] = copy.deepcopy(MyHostArrayKeys)
+
+MyProgram.LogMsg('. Declaring Application Dynatrace Accounts Array .....')
+MyReportAppDyna = {}
+MyReportAppDyna['USERNAMES'] = copy.deepcopy(MyHostArrayKeys)
+
+MyProgram.LogMsg('. Declaring Application Tenable Accounts Array .....')
+MyReportAppTenable = {}
+MyReportAppTenable['USERNAMES'] = copy.deepcopy(MyHostArrayKeys)
+
+MyProgram.LogMsg('. Declaring Application Delinea Accounts Array .....')
+MyReportAppDelinea = {}
+MyReportAppDelinea['USERNAMES'] = copy.deepcopy(MyHostArrayKeys)
+
+MyProgram.LogMsg('. Declaring Application Sophos Accounts Array .....')
+MyReportAppSophos = {}
+MyReportAppSophos['USERNAMES'] = copy.deepcopy(MyHostArrayKeys)
+
+MyProgram.LogMsg('. Declaring Application Oracle Accounts Array .....')
+MyReportAppOracle = {}
+MyReportAppOracle['USERNAMES'] = copy.deepcopy(MyHostArrayKeys)
+
+MyProgram.LogMsg('. Declaring Application Infra Specific Accounts Array .....')
+MyReportAppInfra = {}
+MyReportAppInfra['USERNAMES'] = copy.deepcopy(MyHostArrayKeys)
+
+MyProgram.LogMsg('. Declaring OS CORE Accounts Array .....')
+MyReportOSCore = {}
+MyReportOSCore['USERNAMES'] = copy.deepcopy(MyHostArrayKeys)
+
+MyProgram.LogMsg('. Declaring OS Package Accounts Array .....')
+MyReportOSPackage = {}
+MyReportOSPackage['USERNAMES'] = copy.deepcopy(MyHostArrayKeys)
+
+MyProgram.LogMsg('. Declaring OS Optional Accounts Array .....')
+MyReportOSOptional = {}
+MyReportOSOptional['USERNAMES'] = copy.deepcopy(MyHostArrayKeys)
+
+MyProgram.LogMsg('. Declaring SilverLake Support Accounts Array .....')
+MyReportSLUsers = {}
+MyReportSLUsers['USERNAMES'] = copy.deepcopy(MyHostArrayKeys)
+
+MyProgram.LogMsg('. Declaring SilverLake (CBS) Application Accounts Array .....')
+MyReportSLApp = {}
+MyReportSLApp['USERNAMES'] = copy.deepcopy(MyHostArrayKeys)
+
+MyProgram.LogMsg('. Declaring Undefined Accounts Array .....')
+MyReportUndefined = {}
+MyReportUndefined['USERNAMES'] = copy.deepcopy(MyHostArrayKeys)
+
+
+for MyProgram_Hostname in MyServerList:
+  # -------------------------------------------------------------------------------------------------------------------------
+  # --- Test Connection To Host                                                                                           ---
+  # -------------------------------------------------------------------------------------------------------------------------
+  MyProgram.LogMsg('.')
+  MyProgram.LogMsg('. Connecting To Host : [' + MyProgram_Hostname + '] .....')
+  try :
+    MySHObject = MySSH(MyProgram_Hostname)
+    MySSH_ConnectionGood = MySHObject.RunCommand('hostname')
+  except SSHFailedToConnect as MyException:
+    raise SSHFailedToConnect()
+  except SSHBadCommand as MyException:
+    raise SSHBadCommand()
+  except SSHProgramFailed as MyException:
+    raise SSHProgramFailed()
+
+  # -------------------------------------------------------------------------------------------------------------------------
+  # --- Do The Repostory Checks                                                                                           ---
+  # -------------------------------------------------------------------------------------------------------------------------
+  MyProgram.LogMsg('. Gathering OS User Accounts .....')
+  try :
+    MySHObject = MySSH(MyProgram_Hostname)
+    MySSH_RepoStatus = MySHObject.RunCommand('cat /etc/passwd')
+  except SSHFailedToConnect as MyException:
+    raise SSHFailedToConnect()
+  except SSHBadCommand as MyException:
+    raise SSHBadCommand()
+  except SSHProgramFailed as MyException:
+    raise SSHProgramFailed()
+  else:
+    for line in MySSH_RepoStatus:
+      ThisUser = line.split(':')
+      ThisUser = str(ThisUser[0])
+
+      if ThisUser in MyUserMatrix:
+        MyProgram.LogMsg('.  Processing User : [' + ThisUser + '] - EXISTING USER !!')
+        HostOffset = MyHostArrayKeys.index(MyProgram_Hostname)
+        ThisMatrixRow = MyUserMatrix[ThisUser]
+        ThisMatrixRow[HostOffset] = 'Y'
+        MyUserMatrix[ThisUser] = ThisMatrixRow
+
+      else:
+        MyProgram.LogMsg('.  Processing User : [' + ThisUser + '] - NEW USER !!')
+        HostOffset = MyHostArrayKeys.index(MyProgram_Hostname)
+        ThisMatrixRow = copy.deepcopy(MyHostArrayValues)
+        ThisMatrixRow[HostOffset] = 'Y'
+        MyUserMatrix[ThisUser] = ThisMatrixRow
+
+# -------------------------------------------------------------------------------------------------------------------------
+# --- Now Populate The Report Arrays                                                                                    ---
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Populating Reporting Structures With Data .....')
+for MyReportUser in MyUserMatrix:
+   WrkUsername = MyReportUser
+   WrkUserperms = MyUserMatrix[MyReportUser]
+
+   # Now do a big if for each arrary.....
+   if   any( x == WrkUsername for x in MyInfraSupport):
+     MyReportUserInfra[WrkUsername] = copy.deepcopy(WrkUserperms)
+   elif any( x == WrkUsername for x in MyAppSupport):
+     MyReportUserAppSup[WrkUsername] = copy.deepcopy(WrkUserperms)
+   elif any( x == WrkUsername for x in MyDynSupport):
+     MyReportUserDynSupp[WrkUsername] = copy.deepcopy(WrkUserperms)
+   elif any( x == WrkUsername for x in MyPPT):
+     MyReportUserPPT[WrkUsername] = copy.deepcopy(WrkUserperms)
+   elif any( x == WrkUsername for x in MyDSP):
+     MyReportUserDSP[WrkUsername] = copy.deepcopy(WrkUserperms)
+   elif any( x == WrkUsername for x in MySLUsers):
+     MyReportSLUsers[WrkUsername] = copy.deepcopy(WrkUserperms)
+   elif any( x == WrkUsername for x in MyDynatraceApp):
+     MyReportAppDyna[WrkUsername] = copy.deepcopy(WrkUserperms)
+   elif any( x == WrkUsername for x in MyTenableApp):
+     MyReportAppTenable[WrkUsername] = copy.deepcopy(WrkUserperms)
+   elif any( x == WrkUsername for x in MySophosApp):
+     MyReportAppSophos[WrkUsername] = copy.deepcopy(WrkUserperms)
+   elif any( x == WrkUsername for x in MyDelineaApp):
+     MyReportAppDelinea[WrkUsername] = copy.deepcopy(WrkUserperms)
+   elif any( x == WrkUsername for x in MyOracleApp):
+     MyReportAppOracle[WrkUsername] = copy.deepcopy(WrkUserperms)
+   elif any( x == WrkUsername for x in MySLApp):
+     MyReportSLApp[WrkUsername] = copy.deepcopy(WrkUserperms)
+   elif any( x == WrkUsername for x in MyInfraApp):
+     MyReportAppInfra[WrkUsername] = copy.deepcopy(WrkUserperms)
+   elif any( x == WrkUsername for x in MyLinuxCore):
+     MyReportOSCore[WrkUsername] = copy.deepcopy(WrkUserperms)
+   elif any( x == WrkUsername for x in MyLinuxCoreNA):
+     MyReportOSOptional[WrkUsername] = copy.deepcopy(WrkUserperms)
+   elif any( x == WrkUsername for x in MyLinuxAdds):
+     MyReportOSPackage[WrkUsername] = copy.deepcopy(WrkUserperms)
+   else:
+     MyReportUndefined[WrkUsername] = copy.deepcopy(WrkUserperms)
+
+# -------------------------------------------------------------------------------------------------------------------------
+# --- Generate The Report Output File                                                                                   ---
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Creating Report .....')
+
+# under the reports/audits directory
+# now check / create the todays date directory
+# open a file for write called linux-os-accounts....... etc etc etc
+
+TMP_DirectoryBase = '/home/cab_ansible/CAB_ADMIN/reports/audits'
+TMP_DateTime = datetime.datetime.fromtimestamp(MyProgram.INT_RuntimeValues['SYSTEM-STARTTIMEUTC']).strftime('%Y-%m-%d')
+TMP_NewPath = TMP_DirectoryBase + '/' + TMP_DateTime
+
+os.makedirs(TMP_NewPath, exist_ok=True)
+
+ReportFilename = 'linux-os-accounts.txt'
+WRKFilename = 'linux-os-accounts.wrk'
+CSVFilename = 'linux-os-accounts.csv'
+
+MyDNFReport = TMP_NewPath + '/' + ReportFilename
+MyWRKReport   =  TMP_NewPath + '/' + WRKFilename
+MyCSVReport   =  TMP_NewPath + '/' + CSVFilename
+
+MySummaryReport = open(MyDNFReport, 'w')
+MySummaryWRK = open(MyWRKReport, 'w')
+
+# -------------------------------------------------------------------------------------------------------------------------
+# --- Now Produce The Report Itself                                                                                     ---
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Generating Report .....')
+
+MySummaryReport.write('LINUX (REDHAT) OS ACCOUNTS SUMMARY REPORT\n')
+MySummaryReport.write('-----------------------------------------\n')
+
+# Infrastructure Support Accounts
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. INFRA ACCOUNTS')
+MyProgram.LogMsg('.')
+
+MySummaryReport.write('\n')
+MySummaryReport.write('INFRA ACCOUNTS\n')
+MySummaryReport.write('--------------\n')
+MySummaryReport.write('\n')
+
+for MyPrintRow in MyReportUserInfra:
+  MyProgram.LogMsg('.    ' + str(MyPrintRow) + ' :: ' + str(MyReportUserInfra[MyPrintRow]) )
+  MySummaryReport.write(str(MyPrintRow) + ' : ' + str(MyReportUserInfra[MyPrintRow]) + '\n')
+  if str(MyPrintRow) != 'USERNAMES':
+    MySummaryWRK.write('CAB_INFRA_USERS , ' +  str(MyPrintRow) + ' , ' + str(MyReportUserInfra[MyPrintRow]) + '\n')
+  else:
+    MySummaryWRK.write('ACCNT TYPE , ' +  str(MyPrintRow) + ' , ' + str(MyReportUserInfra[MyPrintRow]) + '\n')
+
+# Production Support - Application Support
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. APPLICATION SUPPORT ACCOUNTS')
+MyProgram.LogMsg('.')
+
+MySummaryReport.write('\n')
+MySummaryReport.write('APPLICATION SUPPORT ACCOUNTS\n')
+MySummaryReport.write('----------------------------\n')
+MySummaryReport.write('\n')
+
+for MyPrintRow in MyReportUserAppSup:
+  MyProgram.LogMsg('.    ' + str(MyPrintRow) + ' :: ' + str(MyReportUserAppSup[MyPrintRow]) )
+  MySummaryReport.write(str(MyPrintRow) + ' : ' + str(MyReportUserAppSup[MyPrintRow]) + '\n')
+  if str(MyPrintRow) != 'USERNAMES':
+    MySummaryWRK.write('CAB_APPSUP_USERS , ' +  str(MyPrintRow) + ' , ' + str(MyReportUserAppSup[MyPrintRow]) + '\n')
+
+# Production Support - Dynatrace Support
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. DYNATRACE SUPPORT ACCOUNTS')
+MyProgram.LogMsg('.')
+
+MySummaryReport.write('\n')
+MySummaryReport.write('DYNATRACE SUPPORT ACCOUNTS\n')
+MySummaryReport.write('--------------------------\n')
+MySummaryReport.write('\n')
+
+for MyPrintRow in MyReportUserDynSupp:
+  MyProgram.LogMsg('.    ' + str(MyPrintRow) + ' :: ' + str(MyReportUserDynSupp[MyPrintRow]) )
+  MySummaryReport.write(str(MyPrintRow) + ' : ' + str(MyReportUserDynSupp[MyPrintRow]) + '\n')
+  if str(MyPrintRow) != 'USERNAMES':
+    MySummaryWRK.write('CAB_DYNA_USERS , ' +  str(MyPrintRow) + ' , ' + str(MyReportUserDynSupp[MyPrintRow]) + '\n')
+
+# External Support Provider - PPT
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. PPT SUPPORT ACCOUNTS')
+MyProgram.LogMsg('.')
+
+MySummaryReport.write('\n')
+MySummaryReport.write('EXTERNAL SUPPORT VENDOR ACCOUNTS - PPT\n')
+MySummaryReport.write('--------------------------------------\n')
+MySummaryReport.write('\n')
+
+for MyPrintRow in MyReportUserPPT:
+  MyProgram.LogMsg('.    ' + str(MyPrintRow) + ' :: ' + str(MyReportUserPPT[MyPrintRow]) )
+  MySummaryReport.write(str(MyPrintRow) + ' : ' + str(MyReportUserPPT[MyPrintRow]) + '\n')
+  if str(MyPrintRow) != 'USERNAMES':
+    MySummaryWRK.write('EXTVEN-PPT , ' +  str(MyPrintRow) + ' , ' + str(MyReportUserPPT[MyPrintRow]) + '\n')
+
+# External Support Provider - DSP
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. DSP SUPPORT ACCOUNTS')
+MyProgram.LogMsg('.')
+
+MySummaryReport.write('\n')
+MySummaryReport.write('EXTERNAL SUPPORT VENDOR ACCOUNTS - DSP\n')
+MySummaryReport.write('--------------------------------------\n')
+MySummaryReport.write('\n')
+
+for MyPrintRow in MyReportUserDSP:
+  MyProgram.LogMsg('.    ' + str(MyPrintRow) + ' :: ' + str(MyReportUserDSP[MyPrintRow]) )
+  MySummaryReport.write(str(MyPrintRow) + ' : ' + str(MyReportUserDSP[MyPrintRow]) + '\n')
+  if str(MyPrintRow) != 'USERNAMES':
+    MySummaryWRK.write('EXTVEN-DSP , ' +  str(MyPrintRow) + ' , ' + str(MyReportUserDSP[MyPrintRow]) + '\n')
+
+# External Support Provider - SILVERLAKE
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. SILVERLAKE SUPPORT ACCOUNTS')
+MyProgram.LogMsg('.')
+
+MySummaryReport.write('\n')
+MySummaryReport.write('EXTERNAL SUPPORT VENDOR ACCOUNTS - SILVERLAKE\n')
+MySummaryReport.write('---------------------------------------------\n')
+MySummaryReport.write('\n')
+
+for MyPrintRow in MyReportSLUsers:
+  MyProgram.LogMsg('.    ' + str(MyPrintRow) + ' :: ' + str(MyReportSLUsers[MyPrintRow]) )
+  MySummaryReport.write(str(MyPrintRow) + ' : ' + str(MyReportSLUsers[MyPrintRow]) + '\n')
+  if str(MyPrintRow) != 'USERNAMES':
+    MySummaryWRK.write('EXTVEN-SL , ' +  str(MyPrintRow) + ' , ' + str(MyReportSLUsers[MyPrintRow]) + '\n')
+
+# Dynatrace Application Accounts - SOFTWARE
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. DYNATRACE APPLICATION ACCOUNTS (SOFTWARE)')
+MyProgram.LogMsg('.')
+
+MySummaryReport.write('\n')
+MySummaryReport.write('SOFTWARE / APPLICATION ACCOUNTS - DYNATRACE\n')
+MySummaryReport.write('-------------------------------------------\n')
+MySummaryReport.write('\n')
+
+for MyPrintRow in MyReportAppDyna:
+  MyProgram.LogMsg('.    ' + str(MyPrintRow) + ' :: ' + str(MyReportAppDyna[MyPrintRow]) )
+  MySummaryReport.write(str(MyPrintRow) + ' : ' + str(MyReportAppDyna[MyPrintRow]) + '\n')
+  if str(MyPrintRow) != 'USERNAMES':
+    MySummaryWRK.write('APPPKG-DYN , ' +  str(MyPrintRow) + ' , ' + str(MyReportAppDyna[MyPrintRow]) + '\n')
+
+# Tenable Application Accounts - SOFTWARE
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. TENABLE APPLICATION ACCOUNTS (SOFTWARE)')
+MyProgram.LogMsg('.')
+
+MySummaryReport.write('\n')
+MySummaryReport.write('SOFTWARE / APPLICATION ACCOUNTS - TENABLE\n')
+MySummaryReport.write('-----------------------------------------\n')
+MySummaryReport.write('\n')
+
+for MyPrintRow in MyReportAppTenable:
+  MyProgram.LogMsg('.    ' + str(MyPrintRow) + ' :: ' + str(MyReportAppTenable[MyPrintRow]) )
+  MySummaryReport.write(str(MyPrintRow) + ' : ' + str(MyReportAppTenable[MyPrintRow]) + '\n')
+  if str(MyPrintRow) != 'USERNAMES':
+    MySummaryWRK.write('APPPKG-TEN , ' +  str(MyPrintRow) + ' , ' + str(MyReportAppTenable[MyPrintRow]) + '\n')
+
+# Sophos Application Accounts - SOFTWARE
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. SOPHOS APPLICATION ACCOUNTS (SOFTWARE)')
+MyProgram.LogMsg('.')
+
+MySummaryReport.write('\n')
+MySummaryReport.write('SOFTWARE / APPLICATION ACCOUNTS - SOPHOS\n')
+MySummaryReport.write('----------------------------------------\n')
+MySummaryReport.write('\n')
+
+for MyPrintRow in MyReportAppSophos:
+  MyProgram.LogMsg('.    ' + str(MyPrintRow) + ' :: ' + str(MyReportAppSophos[MyPrintRow]) )
+  MySummaryReport.write(str(MyPrintRow) + ' : ' + str(MyReportAppSophos[MyPrintRow]) + '\n')
+  if str(MyPrintRow) != 'USERNAMES':
+    MySummaryWRK.write('APPPKG-SOP , ' +  str(MyPrintRow) + ' , ' + str(MyReportAppSophos[MyPrintRow]) + '\n')
+
+# Delinea Application Accounts - SOFTWARE
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. DELINEA APPLICATION ACCOUNTS')
+MyProgram.LogMsg('.')
+
+MySummaryReport.write('\n')
+MySummaryReport.write('SOFTWARE / APPLICATION ACCOUNTS - DELINEA\n')
+MySummaryReport.write('-----------------------------------------\n')
+MySummaryReport.write('\n')
+
+for MyPrintRow in MyReportAppDelinea:
+  MyProgram.LogMsg('.    ' + str(MyPrintRow) + ' :: ' + str(MyReportAppDelinea[MyPrintRow]) )
+  MySummaryReport.write(str(MyPrintRow) + ' : ' + str(MyReportAppDelinea[MyPrintRow]) + '\n')
+  if str(MyPrintRow) != 'USERNAMES':
+    MySummaryWRK.write('APPPKG-DEL , ' +  str(MyPrintRow) + ' , ' + str(MyReportAppDelinea[MyPrintRow]) + '\n')
+
+# Oracle Application Accounts - SOFTWARE
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. ORACLE APPLICATION ACCOUNTS')
+MyProgram.LogMsg('.')
+
+MySummaryReport.write('\n')
+MySummaryReport.write('SOFTWARE / APPLICATION ACCOUNTS - ORACLE\n')
+MySummaryReport.write('----------------------------------------\n')
+MySummaryReport.write('\n')
+
+for MyPrintRow in MyReportAppOracle:
+  MyProgram.LogMsg('.    ' + str(MyPrintRow) + ' :: ' + str(MyReportAppOracle[MyPrintRow]) )
+  MySummaryReport.write(str(MyPrintRow) + ' : ' + str(MyReportAppOracle[MyPrintRow]) + '\n')
+  if str(MyPrintRow) != 'USERNAMES':
+    MySummaryWRK.write('APPPKG-ORA , ' +  str(MyPrintRow) + ' , ' + str(MyReportAppOracle[MyPrintRow]) + '\n')
+
+# CBS Application Accounts - SOFTWARE
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. CBS APPLICATION ACCOUNTS')
+MyProgram.LogMsg('.')
+
+MySummaryReport.write('\n')
+MySummaryReport.write('SOFTWARE / APPLICATION ACCOUNTS - CBS\n')
+MySummaryReport.write('-------------------------------------\n')
+MySummaryReport.write('\n')
+
+for MyPrintRow in MyReportSLApp:
+  MyProgram.LogMsg('.    ' + str(MyPrintRow) + ' :: ' + str(MyReportSLApp[MyPrintRow]) )
+  MySummaryReport.write(str(MyPrintRow) + ' : ' + str(MyReportSLApp[MyPrintRow]) + '\n')
+  if str(MyPrintRow) != 'USERNAMES':
+    MySummaryWRK.write('APPPKG-CBS , ' +  str(MyPrintRow) + ' , ' + str(MyReportSLApp[MyPrintRow]) + '\n')
+
+# INFRASTRUCTURE Application Accounts - SOFTWARE
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. INFRA APPLICATION ACCOUNTS')
+MyProgram.LogMsg('.')
+
+MySummaryReport.write('\n')
+MySummaryReport.write('SOFTWARE / APPLICATION ACCOUNTS - INFRASTRUCTURE\n')
+MySummaryReport.write('------------------------------------------------\n')
+MySummaryReport.write('\n')
+
+for MyPrintRow in MyReportAppInfra:
+  MyProgram.LogMsg('.    ' + str(MyPrintRow) + ' :: ' + str(MyReportAppInfra[MyPrintRow]) )
+  MySummaryReport.write(str(MyPrintRow) + ' : ' + str(MyReportAppInfra[MyPrintRow]) + '\n')
+  if str(MyPrintRow) != 'USERNAMES':
+    MySummaryWRK.write('INFRA-PKG , ' +  str(MyPrintRow) + ' , ' + str(MyReportAppInfra[MyPrintRow]) + '\n')
+
+# OS CORE Accounts - SOFTWARE
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. OS - CORE ACCOUNTS')
+MyProgram.LogMsg('.')
+
+MySummaryReport.write('\n')
+MySummaryReport.write('OPERATING SYSTEM - CORE ACCOUNTS\n')
+MySummaryReport.write('--------------------------------\n')
+MySummaryReport.write('\n')
+
+for MyPrintRow in MyReportOSCore:
+  MyProgram.LogMsg('.    ' + str(MyPrintRow) + ' :: ' + str(MyReportOSCore[MyPrintRow]) )
+  MySummaryReport.write(str(MyPrintRow) + ' : ' + str(MyReportOSCore[MyPrintRow]) + '\n')
+  if str(MyPrintRow) != 'USERNAMES':
+    MySummaryWRK.write('OS-CORE , ' +  str(MyPrintRow) + ' , ' + str(MyReportOSCore[MyPrintRow]) + '\n')
+
+# OS REQUIRED Accounts - SOFTWARE
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. OS - REQUIRED PACKAGE ACCOUNTS')
+MyProgram.LogMsg('.')
+
+MySummaryReport.write('\n')
+MySummaryReport.write('OPERATING SYSTEM - REQUIRED PACKAGES\n')
+MySummaryReport.write('------------------------------------\n')
+MySummaryReport.write('\n')
+
+for MyPrintRow in MyReportOSPackage:
+  MyProgram.LogMsg('.    ' + str(MyPrintRow) + ' :: ' + str(MyReportOSPackage[MyPrintRow]) )
+  MySummaryReport.write(str(MyPrintRow) + ' : ' + str(MyReportOSPackage[MyPrintRow]) + '\n')
+  if str(MyPrintRow) != 'USERNAMES':
+    MySummaryWRK.write('OS-REQPKG , ' +  str(MyPrintRow) + ' , ' + str(MyReportOSPackage[MyPrintRow]) + '\n')
+
+# OS OPTIONAL Accounts - SOFTWARE
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. OS - OPTIONAL PACKAGE ACCOUNTS')
+MyProgram.LogMsg('.')
+
+MySummaryReport.write('\n')
+MySummaryReport.write('OPERATING SYSTEM - OPTIONAL  PACKAGES\n')
+MySummaryReport.write('--------------------------------------\n')
+MySummaryReport.write('\n')
+
+for MyPrintRow in MyReportOSOptional:
+  MyProgram.LogMsg('.    ' + str(MyPrintRow) + ' :: ' + str(MyReportOSOptional[MyPrintRow]) )
+  MySummaryReport.write(str(MyPrintRow) + ' : ' + str(MyReportOSOptional[MyPrintRow]) + '\n')
+  if str(MyPrintRow) != 'USERNAMES':
+    MySummaryWRK.write('OS-OPTPKG , ' +  str(MyPrintRow) + ' , ' + str(MyReportOSOptional[MyPrintRow]) + '\n')
+
+# INDEFINED Accounts - BAD
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. UNDEFINED ACCOUNTS')
+MyProgram.LogMsg('.')
+
+MySummaryReport.write('\n')
+MySummaryReport.write('UNDEFINED ACCOUNTS\n')
+MySummaryReport.write('------------------\n')
+MySummaryReport.write('\n')
+
+for MyPrintRow in MyReportUndefined:
+  MyProgram.LogMsg('.    ' + str(MyPrintRow) + ' :: ' + str(MyReportUndefined[MyPrintRow]) )
+  MySummaryReport.write(str(MyPrintRow) + ' : ' + str(MyReportUndefined[MyPrintRow]) + '\n')
+  if str(MyPrintRow) != 'USERNAMES':
+    MySummaryWRK.write('UNDEFINED , ' +  str(MyPrintRow) + ' , ' + str(MyReportUndefined[MyPrintRow]) + '\n')
+
+MySummaryReport.write('\n')
+MySummaryReport.write('***** END OF REPORT *****\n')
+MySummaryReport.close()
+
+MySummaryWRK.close()
+
+# -------------------------------------------------------------------------------------------------------------------------
+# --- Correctly Format The Report to be a CSV file                                                                      ---
+# -------------------------------------------------------------------------------------------------------------------------
+MyCMDFormat = ' | sed -e !s/\[//g! | sed -e !s/\]//g! | sed -e !s/None/ /g! | sed -e "s/~Y~/Y /g"'
+
+MyProgram.LogMsg('DEBUG:' + str(MyCMDFormat) )
+
+MyCMDFormat = MyCMDFormat.replace('~Y~', "'Y'")
+MyCMDFormat = MyCMDFormat.replace('!', "'")
+
+MyProgram.LogMsg('DEBUG:' + str(MyCMDFormat) )
+
+MyCMDFormat = 'cat ' + str(MyWRKReport) + str(MyCMDFormat) + ' > ' + str(MyCSVReport)
+
+os.system(MyCMDFormat)
+
+# -------------------------------------------------------------------------------------------------------------------------
+# --- Program Finished - Terminating Now                                                                                ---
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Terminating Program .....')
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('.')
+MyProgram.Terminate()
