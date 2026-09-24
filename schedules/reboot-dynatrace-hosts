@@ -1,0 +1,55 @@
+/home/cab_ansible/CAB_ADMIN/bin/maint-os-packages cab-prod-cbsig --summary
+
+[cab_ansible@cab-prod-infral schedules]$ cat maint-tenable-agents
+/home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent usldynagt11
+/home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent psldynagt11
+/home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent psldynagt12
+/home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent psldynsyn11
+/home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent cab-ltc-praeng
+/home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent cab-ltc-ntp
+
+/home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent usldynagt21
+/home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent usldynsyn21
+/home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent psldynagt21
+/home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent psldynagt22
+/home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent psldynsyn21
+/home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent cab-tc2-praeng
+/home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent cab-tc2-ntp
+
+/home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent cab-uat-amm-db
+/home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent cab-uat-amm-app
+/home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent cab-uat-cbs-db
+/home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent cab-uat-cbs-app2
+/home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent cab-uat-cbsig
+/home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent cab-uat2-cbs-db
+/home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent cab-uat2-cbs-app2
+
+/home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent cab-prod-syslog
+/home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent cab-prod-repo
+
+/home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent cab-prod-dbvc
+/home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent cab-prod-dbvdb
+/home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent cab-prod-amm-db
+/home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent cab-prod-amm-app
+/home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent cab-prod-cbs-db
+/home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent cab-prod-cbs-app2
+/home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent cab-prod-cbsig
+
+/home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent cab-prod-infral
+
+[cab_ansible@cab-prod-infral schedules]$ cat reboot-dynatrace-hosts
+/home/cab_ansible/CAB_ADMIN/tools/Reboot-Host -t psldynagt11
+/home/cab_ansible/CAB_ADMIN/tools/Reboot-Host -t psldynagt21
+
+sleep 300
+
+/home/cab_ansible/CAB_ADMIN/tools/Reboot-Host -t psldynagt12
+/home/cab_ansible/CAB_ADMIN/tools/Reboot-Host -t psldynagt22
+
+sleep 300
+
+/home/cab_ansible/CAB_ADMIN/tools/Reboot-Host -t psldynsyn11
+
+sleep 300
+
+/home/cab_ansible/CAB_ADMIN/tools/Reboot-Host -t psldynsyn21
