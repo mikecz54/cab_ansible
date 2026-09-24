@@ -1,0 +1,23 @@
+# -------------------------------------------------------------------------------------------------
+# --- CBS UAT Environment - OS Patching                                                         ---
+# -------------------------------------------------------------------------------------------------
+/home/cab_ansible/CAB_ADMIN/tools/StopCBS-UAT
+
+/home/cab_ansible/CAB_ADMIN/bin/maint-os-packages cab-uat-cbs-db        --summary
+/home/cab_ansible/CAB_ADMIN/bin/maint-os-packages cab-uat-amm-db        --summary
+/home/cab_ansible/CAB_ADMIN/tools/Reboot-Host     -t cab-uat-cbs-db
+/home/cab_ansible/CAB_ADMIN/tools/Reboot-Host     -t cab-uat-amm-db
+sleep 300
+
+/home/cab_ansible/CAB_ADMIN/bin/maint-os-packages cab-uat-cbs-app2      --summary
+/home/cab_ansible/CAB_ADMIN/tools/Reboot-Host     -t cab-uat-cbs-app2
+
+/home/cab_ansible/CAB_ADMIN/bin/maint-os-packages cab-uat-amm-app       --summary
+/home/cab_ansible/CAB_ADMIN/tools/Reboot-Host     -t cab-uat-amm-app
+
+/home/cab_ansible/CAB_ADMIN/bin/maint-os-packages cab-uat-cbsig         --summary
+/home/cab_ansible/CAB_ADMIN/tools/Reboot-Host     -t cab-uat-cbsig
+
+sleep 300
+/home/cab_ansible/CAB_ADMIN/tools/StartCBS-UAT
+
