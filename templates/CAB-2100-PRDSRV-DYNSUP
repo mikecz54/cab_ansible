@@ -1,0 +1,60 @@
+# ================================================================================
+# ====       Crown Agents Bank -      SUDOERS Configuration File              ====
+# ==== ---------------------------------------------------------------------- ====
+# ====      Filename : CAB-2100-PRDSRV-DYNSUP                                 ====
+# ==== OS Group Name : prdsrv-dynsup                                          ====
+# ====   OS Group ID : 2100                                                   ====
+# ====                                                                        ====
+# ====  Notes : Rules for Production Support - Dynatrace Support              ====
+# ====          Rule to allow access to Dynatrace Accounts on Specific Hosts  ====
+# ====          Rule to allow access to Dynatrace Agent Commands              ====
+# ==== ---------------------------------------------------------------------- ====
+# ==== G.Id    U.Id   Username         Who                                    ====
+# ==== ----    ----   ---------------- -------------------------------------- ====
+# ==== 2100    2101   mwright          Matthew Wright                         ====
+# ==== 2100    2102   aponnampal                                              ====
+# ================================================================================
+
+# --------------------------------------------------------------------------------
+# ---- Member (users)                                                         ----
+# --------------------------------------------------------------------------------
+User_Alias PRDSRV-DYNSUP-MEMBERS=mwright,aponnampal
+
+# --------------------------------------------------------------------------------
+# ---- Targets (hosts)                                                        ----
+# --------------------------------------------------------------------------------
+Host_Alias PRDSRV-DYNSUP-HOSTS-UAT=usldynagt11,usldynagt21,usldynsyn01
+Host_Alias PRDSRV-DYNSUP-HOSTS-PRD=psldynagt11,psldynagt12,psldynsyn11,psldynagt21,pslsynagt22,psldynsyn21
+
+# --------------------------------------------------------------------------------
+# ---- Allowed SU accounts                                                    ----
+# --------------------------------------------------------------------------------
+Cmnd_Alias PRDSRV-DYNSUP-SU-UAT=/usr/bin/su - dtuserag
+Cmnd_Alias PRDSRV-DYNSUP-SU-PRD=/usr/bin/su - dtuserag
+Cmnd_Alias PRDSRV-DYNSUP-SU-ALL=/usr/bin/su - dtuser
+
+# --------------------------------------------------------------------------------
+# ---- Specific Commands Allowed                                              ----
+# ----    PRDSRV-DYNSUP-CMD-AGTUPDATE : Service dynatraceautoupdater          ----
+# ----      PRDSRV-DYNSUP-CMD-AGTGWAY : Service dynatracegateway              ----
+# ----     PRDSRV-DYNSUP-CMD-AAGTEXTS : Service extensionsmodule              ----
+# ----    PRDSRV-DYNSUP-CMDS-ONEAGENT : Service oneagent                      ----
+# --------------------------------------------------------------------------------
+Cmnd_Alias PRDSRV-DYNSUP-CMD-AGTUPDATE=/usr/bin/systemctl status dynatraceautoupdater.service, usr/bin/systemctl stop dynatraceautoupdater.service, usr/bin/systemctl start dynatraceautoupdater.service
+Cmnd_Alias PRDSRV-DYNSUP-CMD-AGTGWAY=/usr/bin/systemctl status dynatracegateway.service, usr/bin/systemctl stop dynatracegateway.service, usr/bin/systemctl start dynatracegateway.service
+Cmnd_Alias PRDSRV-DYNSUP-CMD-AGTEXTS=/usr/bin/systemctl status extensionsmodule.service, usr/bin/systemctl stop extensionsmodule.service, usr/bin/systemctl start extensionsmodule.service
+
+Cmnd_Alias PRDSRV-DYNSUP-CMDS-ONEAGENT=/usr/bin/systemctl status oneagent.service, usr/bin/systemctl stop oneagent.service, usr/bin/systemctl start oneagent.service
+
+# --------------------------------------------------------------------------------
+# ---- Mappings                                                               ----
+# --------------------------------------------------------------------------------
+# Can start/stop/status Services on ALL UAT hosts
+PRDSRV-DYNSUP-MEMBERS   PRDSRV-DYNSUP-HOSTS-UAT=(ALL)     NOPASSWD: PRDSRV-DYNSUP-SU-UAT,PRDSRV-DYNSUP-CMD-AGTUPDATE,PRDSRV-DYNSUP-CMD-AGTGWAY,PRDSRV-DYNSUP-CMD-AGTEXTS
+
+# Can start/stop/status Services on ALL PROD hosts
+PRDSRV-DYNSUP-MEMBERS   PRDSRV-DYNSUP-HOSTS-PRD=(ALL)     NOPASSWD: PRDSRV-DYNSUP-SU-PRD,PRDSRV-DYNSUP-CMD-AGTUPDATE,PRDSRV-DYNSUP-CMD-AGTGWAY,PRDSRV-DYNSUP-CMD-AGTEXTS
+
+# Can start/stop/status ONEAGENT Service ONLY on ALL hosts
+PRDSRV-DYNSUP-MEMBERS   ALL=(ALL)                         NOPASSWD: PRDSRV-DYNSUP-SU-ALL,PRDSRV-DYNSUP-CMDS-ONEAGENT
+
