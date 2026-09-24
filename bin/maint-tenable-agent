@@ -1,0 +1,262 @@
+#! /usr/bin/python
+
+import argparse
+import re
+import datetime
+import os
+
+from LIB_STRT_DoStartUp import StartUp
+from LIB_SSH import SSHFailedToConnect, SSHBadCommand, SSHProgramFailed
+from LIB_SSH import MySSH, SSHFailedToConnect, SSHBadCommand, SSHProgramFailed
+
+# =========================================================================================================================
+# ===   ******************************   Tenable Agent PlugIn Updater   *********************************************   ===
+# =========================================================================================================================
+
+MyProgram = StartUp()
+
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Performing A Tenable Agent Plug-In Update.')
+MyProgram.LogMsg('. ==========================================')
+MyProgram.LogMsg('.')
+
+# -------------------------------------------------------------------------------------------------------------------------
+# --- Parse Mandatory Parameters                                                                                        ---
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Parsing Parameters .....')
+MyParser = argparse.ArgumentParser()
+MyParser.add_argument('target'         , help='Specify Target Hostname')
+Myargs = MyParser.parse_args()
+
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('.  On Host [' + Myargs.target + ']')
+MyProgram.LogMsg('.')
+
+MyProgram_Hostname =  Myargs.target
+
+# -------------------------------------------------------------------------------------------------------------------------
+# --- Test Connection To Host                                                                                           ---
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Connecting To Host : [' + MyProgram_Hostname + '] .....')
+try :
+  MySHObject = MySSH(MyProgram_Hostname)
+  MySSH_ConnectionGood = MySHObject.RunCommand('hostname')
+except SSHFailedToConnect as MyException:
+  raise SSHFailedToConnect()
+except SSHBadCommand as MyException:
+  raise SSHBadCommand()
+except SSHProgramFailed as MyException:
+  raise SSHProgramFailed()
+
+MyProgram.LogMsg('.   Connected To Host : [' + MyProgram_Hostname + '] - OK!')
+
+# -------------------------------------------------------------------------------------------------------------------------
+# --- Do The Package Updates                                                                                            ---
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Checking Agent Status .....')
+try :
+  MySHObject = MySSH(MyProgram_Hostname)
+  MySSH_InitialStatus = MySHObject.RunCommand('sudo /opt/nessus_agent/sbin/nessuscli agent status')
+except SSHFailedToConnect as MyException:
+  raise SSHFailedToConnect()
+except SSHBadCommand as MyException:
+  raise SSHBadCommand()
+except SSHProgramFailed as MyException:
+  raise SSHProgramFailed()
+else:
+  MyProgram.LogMsg('.   Agent Status :')
+  for line in MySSH_InitialStatus:
+    MyProgram.LogMsg('.   -> ' + str(line))
+
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Checking Agent Service Status .....')
+try :
+  MySHObject = MySSH(MyProgram_Hostname)
+  MySSH_InitialServiceStatus = MySHObject.RunCommand('sudo systemctl status nessusagent')
+except SSHFailedToConnect as MyException:
+  raise SSHFailedToConnect()
+except SSHBadCommand as MyException:
+  raise SSHBadCommand()
+except SSHProgramFailed as MyException:
+  raise SSHProgramFailed()
+else:
+  MyProgram.LogMsg('.   Agent Service Status :')
+  for line in MySSH_InitialServiceStatus:
+    MyProgram.LogMsg('.   -> ' + str(line))
+
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Checking Agent PlugIn Information .....')
+try :
+  MySHObject = MySSH(MyProgram_Hostname)
+  MySSH_InitialPlugInStatus = MySHObject.RunCommand('sudo /opt/nessus_agent/sbin/nessuscli plugins --info')
+except SSHFailedToConnect as MyException:
+  raise SSHFailedToConnect()
+except SSHBadCommand as MyException:
+  raise SSHBadCommand()
+except SSHProgramFailed as MyException:
+  raise SSHProgramFailed()
+else:
+  MyProgram.LogMsg('.   Agent PlugIn Information :')
+  for line in MySSH_InitialPlugInStatus:
+    MyProgram.LogMsg('.   -> ' + str(line))
+
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Stopping Agent .....')
+try :
+  MySHObject = MySSH(MyProgram_Hostname)
+  MySSH_Temp = MySHObject.RunCommand('sudo systemctl stop nessusagent')
+except SSHFailedToConnect as MyException:
+  raise SSHFailedToConnect()
+except SSHBadCommand as MyException:
+  raise SSHBadCommand()
+except SSHProgramFailed as MyException:
+  raise SSHProgramFailed()
+
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Resetting PlugIns .....')
+try :
+  MySHObject = MySSH(MyProgram_Hostname)
+  MySSH_Reset = MySHObject.RunCommand('sudo /opt/nessus_agent/sbin/nessuscli plugins --reset')
+except SSHFailedToConnect as MyException:
+  raise SSHFailedToConnect()
+except SSHBadCommand as MyException:
+  raise SSHBadCommand()
+except SSHProgramFailed as MyException:
+  raise SSHProgramFailed()
+else:
+  MyProgram.LogMsg('.   Agent PlugIn Information :')
+  for line in MySSH_Reset:
+    MyProgram.LogMsg('.   -> ' + str(line))
+
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Checking PlugIns Post Reset .....')
+try :
+  MySHObject = MySSH(MyProgram_Hostname)
+  MySSH_ResetData = MySHObject.RunCommand('sudo /opt/nessus_agent/sbin/nessuscli plugins --info')
+except SSHFailedToConnect as MyException:
+  raise SSHFailedToConnect()
+except SSHBadCommand as MyException:
+  raise SSHBadCommand()
+except SSHProgramFailed as MyException:
+  raise SSHProgramFailed()
+else:
+  MyProgram.LogMsg('.   Agent PlugIn Information :')
+  for line in MySSH_ResetData:
+    MyProgram.LogMsg('.   -> ' + str(line))
+
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Starting Agent .....')
+try :
+  MySHObject = MySSH(MyProgram_Hostname)
+  MySSH_StartService = MySHObject.RunCommand('sudo systemctl start nessusagent')
+except SSHFailedToConnect as MyException:
+  raise SSHFailedToConnect()
+except SSHBadCommand as MyException:
+  raise SSHBadCommand()
+except SSHProgramFailed as MyException:
+  raise SSHProgramFailed()
+else:
+  MyProgram.LogMsg('.   Agent PlugIn Information :')
+  for line in MySSH_Reset:
+    MyProgram.LogMsg('.   -> ' + str(line))
+
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Checking Agent Service Status .....')
+try :
+  MySHObject = MySSH(MyProgram_Hostname)
+  MySSH_PostStatus = MySHObject.RunCommand('sudo systemctl status nessusagent')
+except SSHFailedToConnect as MyException:
+  raise SSHFailedToConnect()
+except SSHBadCommand as MyException:
+  raise SSHBadCommand()
+except SSHProgramFailed as MyException:
+  raise SSHProgramFailed()
+else:
+  MyProgram.LogMsg('.   Agent PlugIn Information :')
+  for line in MySSH_PostStatus:
+    MyProgram.LogMsg('.   -> ' + str(line))
+
+# -------------------------------------------------------------------------------------------------------------------------
+# --- Generate The Report For This Host                                                                                 ---
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Generate Summary Report .....')
+
+TMP_DateTime = datetime.datetime.fromtimestamp(MyProgram.INT_RuntimeValues['SYSTEM-STARTTIMEUTC']).strftime('%Y-%m-%d')
+TMP_NewPath = '/home/cab_ansible/CAB_ADMIN/reports/tenable/' + TMP_DateTime
+
+os.makedirs(TMP_NewPath, exist_ok=True)
+
+ReportFilename = 'AgentPlugInUpdate.' + MyProgram_Hostname + '.txt'
+MyReport = TMP_NewPath + '/' + ReportFilename
+
+with open(MyReport, 'w') as MySummaryReport:
+   MySummaryReport.write('SUMMARY REPORT FOR ' + MyProgram_Hostname +'\n')
+   MySummaryReport.write('\n')
+
+   MySummaryReport.write('\n')
+   MySummaryReport.write('.   Agent Pre Reload Status\n')
+   MySummaryReport.write('.   =======================\n\n')
+   for line in MySSH_InitialStatus:
+     MySummaryReport.write('.   -> ' + str(line) + '\n')
+
+   MySummaryReport.write('\n')
+   MySummaryReport.write('.   Agent Pre Reload Service Status\n')
+   MySummaryReport.write('.   ===============================\n\n')
+   for line in MySSH_InitialServiceStatus:
+     MySummaryReport.write('.   -> ' + str(line) + '\n')
+
+   MySummaryReport.write('\n')
+   MySummaryReport.write('.   Agent Pre Reload PlugIn Information\n')
+   MySummaryReport.write('.   ===================================\n\n')
+   for line in MySSH_InitialPlugInStatus:
+     MySummaryReport.write('.   -> ' + str(line) + '\n')
+
+   MySummaryReport.write('\n')
+   MySummaryReport.write('.   Agent PlugIn Reset\n')
+   MySummaryReport.write('.   ==================\n\n')
+   for line in MySSH_Reset:
+     MySummaryReport.write('.   -> ' + str(line) + '\n')
+
+   MySummaryReport.write('\n')
+   MySummaryReport.write('.   Agent Post Reload PlugIn Information\n')
+   MySummaryReport.write('.   ====================================\n\n')
+   for line in MySSH_ResetData:
+     MySummaryReport.write('.   -> ' + str(line) + '\n')
+
+   MySummaryReport.write('\n')
+   MySummaryReport.write('.   Agent Post Reload PlugIn Information\n')
+   MySummaryReport.write('.   ====================================\n\n')
+   for line in MySSH_Reset:
+     MySummaryReport.write('.   -> ' + str(line) + '\n')
+
+   MySummaryReport.write('\n')
+   MySummaryReport.write('.   Agent Post Reload Service Start Information\n')
+   MySummaryReport.write('.   ===========================================\n\n')
+   for line in MySSH_StartService:
+     MySummaryReport.write('.   -> ' + str(line) + '\n')
+
+   MySummaryReport.write('\n')
+   MySummaryReport.write('.   Agent Post Reload Service Information\n')
+   MySummaryReport.write('.   =====================================\n\n')
+   for line in MySSH_PostStatus:
+     MySummaryReport.write('.   -> ' + str(line) + '\n')
+
+   MySummaryReport.write('\n')
+   MySummaryReport.write('\n')
+   MySummaryReport.write('***** END OF REPORT *****\n')
+
+MySummaryReport.close()
+
+
+# -------------------------------------------------------------------------------------------------------------------------
+# --- Program Finished - Terminating Now                                                                                ---
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Terminating Program .....')
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('.')
+MyProgram.Terminate()
