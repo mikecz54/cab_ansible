@@ -1,0 +1,105 @@
+#! /usr/bin/python
+
+import argparse
+import re
+import datetime
+import os
+
+from LIB_STRT_DoStartUp import StartUp
+from LIB_SSH import SSHFailedToConnect, SSHBadCommand, SSHProgramFailed
+from LIB_SSH import MySSH, SSHFailedToConnect, SSHBadCommand, SSHProgramFailed
+
+# =========================================================================================================================
+# ===   ******************************   RedHat Package Reportsitories   ********************************************   ===
+# =========================================================================================================================
+
+MyProgram = StartUp()
+
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Check Repository Information.')
+MyProgram.LogMsg('. =============================')
+MyProgram.LogMsg('.')
+
+MyServerList = ['usldynagt11',     'psldynagt11',       'psldynagt12',    'psldynsyn11', \
+                'usldynagt21',     'usldynsyn21',       'psldynagt21',    'psldynagt22', 'psldynsyn21', \
+                'cab-ltc-praeng',  'cab-ltc-ntp',       'cab-tc2-praeng', 'cab-tc2-ntp', \
+                'cab-prod-syslog', 'cab-prod-repo', \
+                'cab-uat-amm-db',  'cab-uat-amm-app', \
+                'cab-uat-cbs-db',  'cab-uat-cbs-app2',  'cab-uat-cbsig', \
+                'cab-uat2-cbs-db', 'cab-uat2-cbs-app2', \
+                'cab-prod-dbvc',   'cab-prod-dbvdb', \
+                'cab-prod-amm-db', 'cab-prod-amm-app', \
+                'cab-prod-cbs-db', 'cab-prod-cbs-app2', 'cab-prod-cbsig', \
+                'cab-prod-infral' ]
+
+TMP_DirectoryBase = '/home/cab_ansible/CAB_ADMIN/reports/osupdates'
+TMP_DateTime = datetime.datetime.fromtimestamp(MyProgram.INT_RuntimeValues['SYSTEM-STARTTIMEUTC']).strftime('%Y-%m-%d')
+TMP_NewPath = TMP_DirectoryBase + '/' + TMP_DateTime
+
+os.makedirs(TMP_NewPath, exist_ok=True)
+
+ReportFilename = 'dnf_repository_info..txt'
+MyDNFReport = TMP_NewPath + '/' + ReportFilename
+
+MySummaryReport = open(MyDNFReport, 'w')
+MySummaryReport.write('CAB REDHAT REPO SUMMARY REPORT\n')
+MySummaryReport.write('\n')
+
+for MyProgram_Hostname in MyServerList:
+
+  # -------------------------------------------------------------------------------------------------------------------------
+  # --- Test Connection To Host                                                                                           ---
+  # -------------------------------------------------------------------------------------------------------------------------
+  MyProgram.LogMsg('.')
+  MyProgram.LogMsg('. Connecting To Host : [' + MyProgram_Hostname + '] .....')
+  try :
+    MySHObject = MySSH(MyProgram_Hostname)
+    MySSH_ConnectionGood = MySHObject.RunCommand('hostname')
+  except SSHFailedToConnect as MyException:
+    raise SSHFailedToConnect()
+  except SSHBadCommand as MyException:
+    raise SSHBadCommand()
+  except SSHProgramFailed as MyException:
+    raise SSHProgramFailed()
+
+  # -------------------------------------------------------------------------------------------------------------------------
+  # --- Do The Repostory Checks                                                                                           ---
+  # -------------------------------------------------------------------------------------------------------------------------
+  MyProgram.LogMsg('. Checking Repo Status .....')
+  try :
+    MySHObject = MySSH(MyProgram_Hostname)
+    MySSH_RepoStatus = MySHObject.RunCommand('sudo dnf repoinfo')
+  except SSHFailedToConnect as MyException:
+    raise SSHFailedToConnect()
+  except SSHBadCommand as MyException:
+    raise SSHBadCommand()
+  except SSHProgramFailed as MyException:
+    raise SSHProgramFailed()
+  else:
+    MySummaryReport.write('. Repo Status For Host : [' + MyProgram_Hostname + '] .....')
+    for line in MySSH_RepoStatus:
+      if re.search('^Repo-id', line):
+        MyProgram.LogMsg('.')
+        MySummaryReport.write('.\n')
+        MyProgram.LogMsg('.       Repo ID : ' + str(line) )
+        MySummaryReport.write('.       Repo ID : ' + str(line) + '\n')
+      if re.search('^Repo-baseurl', line):
+        MyProgram.LogMsg('.      Base URL : ' + str(line) )
+        MySummaryReport.write('.      Base URL : ' + str(line) + '\n' )
+        MySummaryReport.write('.\n')
+      if re.search('^Repo-updated', line):
+        MyProgram.LogMsg('.    Updated On : ' + str(line) )
+        MySummaryReport.write('.    Updated On : ' + str(line) + '\n' )
+
+MySummaryReport.write('\n')
+MySummaryReport.write('***** END OF REPORT *****\n')
+MySummaryReport.close()
+
+# -------------------------------------------------------------------------------------------------------------------------
+# --- Program Finished - Terminating Now                                                                                ---
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Terminating Program .....')
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('.')
+MyProgram.Terminate()
