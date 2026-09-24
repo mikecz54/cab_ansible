@@ -1,0 +1,7 @@
+# -------------------------------------------------------------------------------------------------
+# --- DbVisit Patching Schedule                                                                 ---
+# -------------------------------------------------------------------------------------------------
+
+/home/cab_ansible/CAB_ADMIN/bin/maint-os-packages cab-prod-dbvdb  --summary
+/home/cab_ansible/CAB_ADMIN/bin/maint-os-packages cab-prod-dbvc    --reboot --summary
+
