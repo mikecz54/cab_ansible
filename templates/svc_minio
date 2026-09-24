@@ -1,0 +1,2 @@
+groupadd --gid 3000 svc_minio
+useradd --create-home --shell /usr/bin/bash --uid 3000 --gid 3000 --comment 'Minio Service Account'  svc_minio
