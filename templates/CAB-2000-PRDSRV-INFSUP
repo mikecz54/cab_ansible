@@ -1,0 +1,37 @@
+# ================================================================================
+# ====       Crown Agents Bank -      SUDOERS Configuration File              ====
+# ==== ---------------------------------------------------------------------- ====
+# ====      Filename : CAB-2000-PRDSRV-INFSUP                                 ====
+# ==== OS Group Name : prdsrv-infrasup                                        ====
+# ====   OS Group ID : 2000                                                   ====
+# ====                                                                        ====
+# ====  Notes : Rules for Production Support - Infrastructure                 ====
+# ====          General rule to allow access to ROOT on ALL Hosts             ====
+# ==== ---------------------------------------------------------------------- ====
+# ==== G.Id    U.Id   Username         Who                                    ====
+# ==== ----    ----   ---------------- -------------------------------------- ====
+# ==== 2000    2001   rmagistrelli     Rick Magistrelli                       ====
+# ==== 2000    2002   adikko           Amina Dikko                            ====
+# ==== 2000    2003   aalbakri         Ali Albakri                            ====
+# ==== 2000    2004   mczerniak        Michael Czerniak                       ====
+# ================================================================================
+
+# --------------------------------------------------------------------------------
+# ---- CAB_ANSIBLE Service Account - DO NOT MESS WITH THIS !                  ----
+# --------------------------------------------------------------------------------
+cab_ansible     ALL=(ALL)       NOPASSWD: ALL
+
+# --------------------------------------------------------------------------------
+# ---- Member (users)                                                         ----
+# --------------------------------------------------------------------------------
+User_Alias PRDSRV-INFSUP-MEMBERS = rmagistrelli,adikko,aalbakri,mczerniak
+
+# --------------------------------------------------------------------------------
+# ---- Allowed SU accounts                                                    ----
+# --------------------------------------------------------------------------------
+Cmnd_Alias PRDSRV-INFSUP-SU-ALL = /usr/bin/su - cab_ansible, /usr/bin/su - root, /usr/bin/su - oracle, /usr/bin/su - dtuserag, /usr/bin/su - dtuser
+
+# --------------------------------------------------------------------------------
+# ---- Mappings  (applies to ALL Linux hosts)                                 ----
+# --------------------------------------------------------------------------------
+PRDSRV-INFSUP-MEMBERS   ALL=(ALL)     NOPASSWD: PRDSRV-INFSUP-SU-ALL
