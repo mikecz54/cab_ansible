@@ -1,0 +1,112 @@
+#! /usr/bin/python
+
+from LIB_STRT_DoStartUp import StartUp
+from LIB_SSH import MySSH, SSHFailedToConnect, SSHBadCommand, SSHProgramFailed
+import copy
+import datetime
+import os
+
+# =========================================================================================================================
+# ===   *********************************   Stop CBS UAT2 Environment   *********************************************   ===
+# =========================================================================================================================
+
+MyProgram = StartUp()
+
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. STOP CBS UAT2 Environment')
+MyProgram.LogMsg('. =========================')
+MyProgram.LogMsg('.')
+
+MyProgram_Hostname_Database = 'cab-uat2-cbs-db'
+MyProgram_Hostname_WebLogic = 'cab-uat2-cbs-app2'
+
+# -------------------------------------------------------------------------------------------------------------------------
+# --- Test Connection To DB Host                                                                                        ---
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Connecting To Host : [' + MyProgram_Hostname_Database + '] .....')
+try :
+  MyProgram_SSH_DB_object = MySSH(MyProgram_Hostname_Database)
+  MySSH_ConnectionGood = MyProgram_SSH_DB_object.RunCommand('hostname')
+except SSHFailedToConnect as MyException:
+  raise SSHFailedToConnect()
+except SSHBadCommand as MyException:
+  raise SSHBadCommand()
+except SSHProgramFailed as MyException:
+  raise SSHProgramFailed()
+
+# -------------------------------------------------------------------------------------------------------------------------
+# --- Test Connection To WebLogic Host                                                                                  ---
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Connecting To Host : [' + MyProgram_Hostname_WebLogic + '] .....')
+try :
+  MyProgram_SSH_APP_object = MySSH(MyProgram_Hostname_WebLogic)
+  MySSH_ConnectionGood = MyProgram_SSH_APP_object.RunCommand('hostname')
+except SSHFailedToConnect as MyException:
+  raise SSHFailedToConnect()
+except SSHBadCommand as MyException:
+  raise SSHBadCommand()
+except SSHProgramFailed as MyException:
+  raise SSHProgramFailed()
+
+# -------------------------------------------------------------------------------------------------------------------------
+# --- Stop WebLogic Services and Database                                                                               ---
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Stopping WebLogic Services .....')
+try :
+  MyProgram_Stop_WebLogic = MyProgram_SSH_APP_object.RunCommand("sudo -u oracle sh -c '/home/oracle/.bash_profile ; /home/oracle/scripts/stop_WLS_FR.sh'")
+except SSHFailedToConnect as MyException:
+  raise SSHFailedToConnect()
+except SSHBadCommand as MyException:
+  raise SSHBadCommand()
+except SSHProgramFailed as MyException:
+  raise SSHProgramFailed()
+else:
+  for line in MyProgram_Stop_WebLogic:
+    MyProgram.LogMsg('.   -> ' + str(line))
+
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Stopping WebLogic Local Database')
+try :
+  MyProgram_Stop_WebLogicDB = MyProgram_SSH_APP_object.RunCommand("sudo -u oracle sh -c '/home/oracle/.bash_profile ; /dataarea1/app/oracle/product/DB19/bin/dbshut /dataarea1/app/oracle/product/DB19'")
+except SSHFailedToConnect as MyException:
+  raise SSHFailedToConnect()
+except SSHBadCommand as MyException:
+  raise SSHBadCommand()
+except SSHProgramFailed as MyException:
+  raise SSHProgramFailed()
+else:
+  for line in MyProgram_Stop_WebLogicDB:
+    MyProgram.LogMsg('.   -> ' + str(line))
+
+# -------------------------------------------------------------------------------------------------------------------------
+# --- Stop CBS Database                                                                                                 ---
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Stopping CBS Database')
+try :
+  MyProgram_Stop_Database = MyProgram_SSH_DB_object.RunCommand("sudo -u oracle sh -c '/home/oracle/.bash_profile ; /dataarea1/app/oracle/product/DB19/bin/dbshut /dataarea1/app/oracle/product/DB19'")
+except SSHFailedToConnect as MyException:
+  raise SSHFailedToConnect()
+except SSHBadCommand as MyException:
+  raise SSHBadCommand()
+except SSHProgramFailed as MyException:
+  raise SSHProgramFailed()
+else:
+  for line in MyProgram_Stop_Database:
+    MyProgram.LogMsg('.   -> ' + str(line))
+
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Stopped CBS WebLogic and Database - Ready For Patching')
+
+# -------------------------------------------------------------------------------------------------------------------------
+# --- Program Finished - Terminating Now                                                                                ---
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Terminating Program .....')
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('.')
+MyProgram.Terminate()
+
