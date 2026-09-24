@@ -1,0 +1,101 @@
+# ┌────────────────────────────────────────────────────────────────────────────────────────────────────┐
+# │   ********************************   OS PATCHING SCHEDULE   ************************************   │
+# ├────────────────────────────────────────────────────────────────────────────────────────────────────┤
+# │ Excluded Hosts : cab-prod-cbs-db                                                                   │
+# │                  cab-prod-cbs-app2                                                                 │
+# │                  cab-prod-amm-db                                                                   │
+# │                  cab-prod-amm-app2                                                                 │
+# │                  cab-prod-cbsig                                                                    │
+# └────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+  30 20  *  * 6     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/audit-repo-servers
+
+  00 20  *  * 6     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-os-packages usldynagt11        --reboot --summary
+  00 20  *  * 6     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-os-packages psldynagt11        --reboot --summary
+  15 20  *  * 6     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-os-packages psldynagt12        --reboot --summary
+  00 20  *  * 6     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-os-packages psldynsyn11        --reboot --summary
+  00 20  *  * 6     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-os-packages cab-ltc-praeng     --reboot --summary
+  00 20  *  * 6     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-os-packages cab-ltc-ntp        --reboot --summary
+
+  15 20  *  * 6     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-os-packages cab-uat2-cbs-db    --reboot --summary
+  30 20  *  * 6     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-os-packages cab-uat2-cbs-app2  --reboot --summary
+
+  15 20  *  * 6     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-os-packages cab-uat-cbs-db     --reboot --summary
+  30 20  *  * 6     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-os-packages cab-uat-cbs-app2   --reboot --summary
+  40 20  *  * 6     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-os-packages cab-uat-cbsig      --reboot --summary
+
+
+  30 20  *  * 6     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-os-packages usldynagt21        --reboot --summary
+  30 20  *  * 6     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-os-packages usldynsyn21        --reboot --summary
+  30 20  *  * 6     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-os-packages psldynagt21        --reboot --summary
+  45 20  *  * 6     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-os-packages psldynagt22        --reboot --summary
+  30 20  *  * 6     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-os-packages psldynsyn21        --reboot --summary
+  30 20  *  * 6     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-os-packages cab-tc2-praeng     --reboot --summary
+  30 20  *  * 6     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-os-packages cab-tc2-ntp        --reboot --summary
+
+  00 21  *  * 6     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-os-packages cab-prod-syslog    --reboot --summary
+  00 21  *  * 6     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-os-packages cab-prod-sre       --reboot --summary
+
+# ------------------------------- RHEL 7 SERVERS - NOT COMPATIBLE WITH NEW SCRIPT! ---------------------------------------------------------
+# 00 22  *  * 6     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-os-packages cab-prod-synth     --reboot --summary
+# 00 22  *  * 6     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-os-packages cab-prod-dtag      --reboot --summary
+# ------------------------------- RHEL 7 SERVERS - NOT COMPATIBLE WITH NEW SCRIPT! ---------------------------------------------------------
+
+  00 22  *  * 6     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-os-packages cab-prod-infral  --summary ; sudo shutdown -r 1
+
+  00 23  *  * 6     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-os-packages cab-prod-repo      --reboot --summary
+# Please NOTE cab-prod-repo updates itself @23:00 on Saturday via a local crontab job owned by root, we will do this for completeness
+
+# ┌────────────────────────────────────────────────────────────────────────────────────────────────────┐
+# │   ******************************    TENABLE AGENT PLUGIN RELOAD   ******************************   │
+# └────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+  00 17  *  * 0     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent usldynagt11
+  01 17  *  * 0     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent psldynagt11
+  02 17  *  * 0     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent psldynagt12
+  03 17  *  * 0     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent psldynsyn11
+  04 17  *  * 0     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent cab-ltc-praeng
+  05 17  *  * 0     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent cab-ltc-ntp
+
+  08 17  *  * 0     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent usldynagt21
+  09 17  *  * 0     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent usldynsyn21
+  10 17  *  * 0     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent psldynagt21
+  11 17  *  * 0     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent psldynagt22
+  12 17  *  * 0     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent psldynsyn21
+  13 17  *  * 0     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent cab-tc2-praeng
+  14 17  *  * 0     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent cab-tc2-ntp
+
+  17 17  *  * 0     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent cab-uat-amm-db
+  28 17  *  * 0     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent cab-uat-amm-app
+  15 17  *  * 0     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent cab-uat-cbs-db
+  16 17  *  * 0     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent cab-uat-cbs-app2
+  17 17  *  * 0     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent cab-uat-cbsig
+  20 17  *  * 0     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent cab-uat2-cbs-db
+  21 17  *  * 0     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent cab-uat2-cbs-app2
+
+  22 17  *  * 0     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent cab-prod-syslog
+  23 17  *  * 0     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent cab-prod-repo
+
+  24 17  *  * 0     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent cab-prod-dbvc
+  25 17  *  * 0     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent cab-prod-dbvdb
+  29 17  *  * 0     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent cab-prod-amm-db
+  30 17  *  * 0     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent cab-prod-amm-app
+  27 17  *  * 0     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent cab-prod-cbs-db
+  28 17  *  * 0     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent cab-prod-cbs-app2
+  31 17  *  * 0     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent cab-prod-cbsig
+
+  32 17  *  * 0     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent cab-prod-infral
+
+  33 17  *  * 0     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent cab-prod-sre
+  34 17  *  * 0     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent cab-prod-synth
+  35 17  *  * 0     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/maint-tenable-agent cab-prod-dtag
+
+# ┌────────────────────────────────────────────────────────────────────────────────────────────────────┐
+# │   ****************************   LINUX AND ORACLE QUARTERLY AUDIT   ****************************   │
+# └────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+  00 07 28  * *     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/audit-os-users
+  00 07 28  * *     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/audit-oracle-users -d CBS
+  00 07 28  * *     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/audit-oracle-users -d AMM
+  00 07 28  * *     . /home/cab_ansible/.bash_profile ; /home/cab_ansible/CAB_ADMIN/bin/audit-oracle-users -d CAGM
+
