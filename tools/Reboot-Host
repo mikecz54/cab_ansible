@@ -1,0 +1,73 @@
+#! /usr/bin/python
+
+from LIB_STRT_DoStartUp import StartUp
+from LIB_SSH import MySSH, SSHFailedToConnect, SSHBadCommand, SSHProgramFailed
+import argparse
+import copy
+import datetime
+import os
+
+# =========================================================================================================================
+# ===   *****************************************   ReBOOT Host   ***************************************************   ===
+# =========================================================================================================================
+
+MyProgram = StartUp()
+
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. ReBoot Host.')
+MyProgram.LogMsg('. ============')
+MyProgram.LogMsg('.')
+
+# -------------------------------------------------------------------------------------------------------------------------
+# --- Parse Mandatory Parameters                                                                                        ---
+# -------------------------------------------------------------------------------------------------------------------------
+# -t --target <HOSTNAME>
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Parsing Parameters .....')
+MyParser = argparse.ArgumentParser()
+MyParser.add_argument('-t', '--target' , help='Specify Target Hostname')
+Myargs = MyParser.parse_args()
+
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('.  ReBOOT Host [' + Myargs.target + ']')
+MyProgram.LogMsg('.')
+
+MyProgram_Hostname =  Myargs.target
+
+# -------------------------------------------------------------------------------------------------------------------------
+# --- Test Connection To Host                                                                                           ---
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Connecting To Host : [' + MyProgram_Hostname + '] .....')
+try :
+  MySHObject = MySSH(MyProgram_Hostname)
+  MySSH_ConnectionGood = MySHObject.RunCommand('hostname')
+except SSHFailedToConnect as MyException:
+  raise SSHFailedToConnect()
+except SSHBadCommand as MyException:
+  raise SSHBadCommand()
+except SSHProgramFailed as MyException:
+  raise SSHProgramFailed()
+
+# -------------------------------------------------------------------------------------------------------------------------
+# --- ReBOOT Host                                                                                                       ---
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('. ReBOOTing Host NOW .....')
+try :
+  MySHObject = MySSH(MyProgram_Hostname)
+  MySSH_RepoStatus = MySHObject.RunCommand('sudo shutdown -r now')
+except SSHFailedToConnect as MyException:
+  pass
+except SSHBadCommand as MyException:
+  raise SSHBadCommand()
+except SSHProgramFailed as MyException:
+  raise SSHProgramFailed()
+
+# -------------------------------------------------------------------------------------------------------------------------
+# --- Program Finished - Terminating Now                                                                                ---
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Terminating Program .....')
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('.')
+MyProgram.Terminate()
