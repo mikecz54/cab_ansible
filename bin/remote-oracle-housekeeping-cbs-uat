@@ -1,0 +1,1 @@
+ssh cab-uat-cbs-db "sudo su - oracle -c '/home/oracle/cab_dba/bin/CABDBA_runjob HouseKeeping'"
