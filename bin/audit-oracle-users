@@ -1,0 +1,108 @@
+#! /usr/bin/python
+
+from LIB_STRT_DoStartUp import StartUp
+from LIB_SSH import MySSH, SSHFailedToConnect, SSHBadCommand, SSHProgramFailed
+import argparse
+import oracledb
+import copy
+import datetime
+import os
+
+# =========================================================================================================================
+# ===   ************************************   Oracle User Auditing   ***********************************************   ===
+# =========================================================================================================================
+
+MyProgram = StartUp()
+
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Oracle Database User Audit.')
+MyProgram.LogMsg('. ===========================')
+MyProgram.LogMsg('.')
+
+# -------------------------------------------------------------------------------------------------------------------------
+# --- Parse Mandatory Parameters                                                                                        ---
+# -------------------------------------------------------------------------------------------------------------------------
+# -d --database <DBNAME>
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Parsing Parameters .....')
+MyParser = argparse.ArgumentParser()
+MyParser.add_argument('-d', '--database' , help='Target Database To Audit', choices=['CBS', 'AMM', 'CAGM'], required=True)
+Myargs = MyParser.parse_args()
+
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('.  Target [' + Myargs.database + ']')
+MyProgram.LogMsg('.')
+
+MyProgram_DBName =  Myargs.database
+
+if MyProgram_DBName == 'CBS':
+  MyDB_Username = 'cab_ansible'
+  MyDB_Passwd   = 'jk234986cdkljF93G'
+  MyDB_Connect  = 'cab-prod-cbs-db:1521/bklv'
+elif  MyProgram_DBName == 'AMM':
+  MyProgram.LogMsg('. AMM Is Not Supported YET!')
+  MyProgram.Terminate()
+elif MyProgram_DBName == 'CAGM':
+  MyProgram.LogMsg('. CAGM  Is Not Supported YET!')
+  MyProgram.Terminate()
+else:
+  MyProgram.LogMsg('. Unknown Target!')
+  MyProgram.Terminate()
+
+# -------------------------------------------------------------------------------------------------------------------------
+# --- Initialise Database Connection                                                                                    ---
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('. Initialise Database Connection .....')
+oracledb.init_oracle_client(lib_dir='/home/cab_ansible/CAB_ADMIN/software/instantclient_19_30')
+MyConnection  = oracledb.connect(user=MyDB_Username, password=MyDB_Passwd, dsn=MyDB_Connect)
+
+# -------------------------------------------------------------------------------------------------------------------------
+# --- Define And Open the Report And CSV Files                                                                          ---
+# -------------------------------------------------------------------------------------------------------------------------
+TMP_DirectoryBase = '/home/cab_ansible/CAB_ADMIN/reports/audits'
+TMP_DateTime = datetime.datetime.fromtimestamp(MyProgram.INT_RuntimeValues['SYSTEM-STARTTIMEUTC']).strftime('%Y-%m-%d')
+TMP_NewPath = TMP_DirectoryBase + '/' + TMP_DateTime
+
+os.makedirs(TMP_NewPath, exist_ok=True)
+
+ReportFilename = 'oracle-db-accounts.' + Myargs.database + '.txt'
+CSVFilename = 'oracle-db-accounts.' + Myargs.database + '.csv'
+
+MyDNFReport = TMP_NewPath + '/' + ReportFilename
+MyCSVReport   =  TMP_NewPath + '/' + CSVFilename
+
+MySummaryReport = open(MyDNFReport, 'w')
+MySummaryCSV = open(MyCSVReport, 'w')
+
+MySummaryReport.write('\n')
+MySummaryReport.write('ORACLE DATABASE ACCOUNTS\n')
+MySummaryReport.write('------------------------\n')
+MySummaryReport.write('\n')
+
+MyProgram.LogMsg('.   -> {0: >15}'.format('USER TYPE') + ' :: {0:30}'.format('USERNAME') + ' : {0:25}'.format('PROFILE') + ' : {0:15}'.format('STATUS') )
+MySummaryReport.write('{0: >15}'.format('USER TYPE') + ' :: {0:30}'.format('USERNAME') + ' : {0:25}'.format('PROFILE') + ' : {0:15}'.format('STATUS') + '\n' )
+MySummaryReport.write('--------------- :: ------------------------------ : ------------------------- : ---------------\n')
+MySummaryCSV.write('USER_TYPE, USERNAME, PROFILE, STATUS\n')
+
+MyCursor = MyConnection.cursor()
+for MyRow in MyCursor.execute('SELECT USERTYPE, USERNAME, PROFILE, ACCOUNT_STATUS FROM CAB_USER_AUDIT'):
+  MyProgram.LogMsg('.   -> {0: >15}'.format(str(MyRow[0])) + ' :: {0:30}'.format(str(MyRow[1])) + ' : {0:25}'.format(str(MyRow[2])) + ' : {0:15}'.format(str(MyRow[3])) )
+  MySummaryReport.write('{0: >15}'.format(str(MyRow[0])) + ' :: {0:30}'.format(str(MyRow[1])) + ' : {0:25}'.format(str(MyRow[2])) + ' : {0:15}'.format(str(MyRow[3])) + '\n')
+  MySummaryCSV.write(str(MyRow[0]) + ', ' + str(MyRow[1]) + ', ' + str(MyRow[2]) + ', ' + str(MyRow[3]) + '\n')
+
+MySummaryReport.write('\n')
+MySummaryReport.write('***** END OF REPORT *****\n')
+MySummaryReport.close()
+
+MySummaryCSV.close()
+
+MyConnection.close()
+
+# -------------------------------------------------------------------------------------------------------------------------
+# --- Program Finished - Terminating Now                                                                                ---
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Terminating Program .....')
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('.')
+MyProgram.Terminate()
