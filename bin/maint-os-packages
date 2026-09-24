@@ -1,0 +1,172 @@
+#! /usr/bin/python
+
+import argparse
+import re
+
+from LIB_STRT_DoStartUp import StartUp
+from LIB_SSH import SSHFailedToConnect, SSHBadCommand, SSHProgramFailed
+from LIB_RHEL_dnf import RHEL_DNF_Updater, DNFFailedStartUp, DNFFailedShutdown
+
+# =========================================================================================================================
+# ===   *******************************   RedHat OS Package Updater   ***********************************************   ===
+# =========================================================================================================================
+
+MyProgram = StartUp()
+
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Performing A RedHat OS Package and/or Kernel Update')
+MyProgram.LogMsg('. ===================================================')
+MyProgram.LogMsg('.')
+
+# -------------------------------------------------------------------------------------------------------------------------
+# --- Parse Mandatory Parameters                                                                                        ---
+# -------------------------------------------------------------------------------------------------------------------------
+# -t --target <HOSTNAME>
+# -r --reboot
+# -s --summary
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Parsing Parameters .....')
+MyParser = argparse.ArgumentParser()
+MyParser.add_argument('target'         , help='Specify Target Hostname')
+MyParser.add_argument('-r', '--reboot' , help='REBOOT Host If Required', action='store_true')
+MyParser.add_argument('-s', '--summary', help='Produce Summary Report' , action='store_true')
+Myargs = MyParser.parse_args()
+
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('.  On Host [' + Myargs.target + ']')
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('.  ReBOOT? [' + str(Myargs.reboot) + ']')
+MyProgram.LogMsg('. Summary? [' + str(Myargs.summary) + ']')
+MyProgram.LogMsg('.')
+
+MyProgram_Hostname =  Myargs.target
+MyProgram_REBOOT = Myargs.reboot
+MyProgram_SummaryReport = Myargs.summary
+
+# -------------------------------------------------------------------------------------------------------------------------
+# --- Test Connection To Host                                                                                           ---
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Connecting To Host : [' + MyProgram_Hostname + '] .....')
+try :
+  MyDNFUpdate = RHEL_DNF_Updater(MyProgram.INT_RuntimeValues['SYSTEM-STARTTIMEUTC'], MyProgram_Hostname, '/home/cab_ansible/CAB_ADMIN/reports/osupdates')
+except SSHFailedToConnect as MyException:
+  raise SSHFailedToConnect()
+except SSHBadCommand as MyException:
+  raise SSHBadCommand()
+except SSHProgramFailed as MyException:
+  raise SSHProgramFailed()
+
+MyProgram.LogMsg('.   Connected To Host : [' + MyProgram_Hostname + '] - OK!')
+
+
+# -------------------------------------------------------------------------------------------------------------------------
+# --- Do The Package Updates                                                                                            ---
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Updating Packages .....')
+try :
+  MyScript_Changes = None
+  MyScript_Completed = False
+  MyScript_PackagesInstalled = None
+  MyScript_PackagesUpgraded  = None
+  MyScript_PackagesRemoved   = None
+
+  MyDNFUpdate.DNFUpdatePackages()
+except SSHFailedToConnect as MyException:
+  raise SSHFailedToConnect()
+except SSHBadCommand as MyException:
+  raise SSHBadCommand()
+except SSHProgramFailed as MyException:
+  raise SSHProgramFailed()
+else:
+  for line in MyDNFUpdate.MyUpdateResults:
+    MyProgram.LogMsg('.       -> ' + str(line) )
+    if re.search('Nothing to do', line):
+      MyScript_Changes = False
+    if re.search('^Install.*Packages$', line):
+      MyScript_PackagesInstalled = line
+      MyScript_Changes = True
+    if re.search('^Upgrade.*Packages$', line):
+      MyScript_PackagesUpgraded = line
+      MyScript_Changes = True
+    if re.search('^Remove.*Packages$', line):
+      MyScript_PackagesRemoved = line
+      MyScript_Changes = True
+    if re.search('Complete!', line):
+      MyScript_Completed = True
+
+if MyScript_Completed:
+  MyProgram.LogMsg('.   DNF Update Has Completed OK!')
+else:
+  MyProgram.LogMsg('.   Unable to Get Completed Statement - Not sure whats happened!')
+
+if MyScript_Changes == False:
+  MyProgram.LogMsg('.   No Packages Need Updating - System At Latest')
+elif MyScript_Changes == True:
+  MyProgram.LogMsg('.   Packages Have Been Updated')
+  MyProgram.LogMsg('.           NEW : ' + str(MyScript_PackagesInstalled) )
+  MyProgram.LogMsg('.      UPGRADED : ' + str(MyScript_PackagesUpgraded) )
+  MyProgram.LogMsg('.       REMOVED : ' + str(MyScript_PackagesRemoved) )
+else:
+  MyProgram.LogMsg('.   Not Sure what Has Changed !')
+
+# -------------------------------------------------------------------------------------------------------------------------
+# --- Do We Need A ReBOOT ?                                                                                             ---
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Check ReBOOT Required ? .....')
+
+if MyProgram_REBOOT :
+  MyProgram.LogMsg('.   Reboot **HAS** Been Requested.')
+  try:
+    MyProgram.LogMsg('.   REBOOT Initiated .....')
+    MyDNFUpdate.DNFHostREBOOT()
+  except SSHFailedToConnect as MyException:
+    raise SSHFailedToConnect()
+  except SSHBadCommand as MyException:
+    raise SSHBadCommand()
+  except SSHProgramFailed as MyException:
+    raise SSHProgramFailed()
+  except DNFFailedShutdown as MyException:
+    raise DNFFailedShutdown()
+  except DNFFailedStartUp as MyException:
+    raise DNFFailedStartUp()
+  else:
+    MyProgram.LogMsg('.   REBOOT Completed, Server Back Online .....')
+    MyProgram.LogMsg('.   Server Uptime : ' + str(MyDNFUpdate.MyRebootResult) )
+else:
+  MyProgram.LogMsg('.   Reboot HAS **NOT** Been Requested.')
+  if MyScript_Changes:
+    MyProgram.LogMsg('.   DNF **HAS** Made Package Changes So A ReBOOT Should Be Performed .....')
+    MyProgram.LogMsg('.')
+    MyProgram.LogMsg('.   ============================================================================================')
+    MyProgram.LogMsg('.   === ********************       Please Perform This Manually.       ********************* ===')
+    MyProgram.LogMsg('.   ============================================================================================')
+  else:
+    MyProgram.LogMsg('.   DNF Has **NOT** Made Package Changes So A ReBOOT Is Not Required .....')
+
+
+# -------------------------------------------------------------------------------------------------------------------------
+# --- Generate The Report For This Host                                                                                 ---
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Check If Summary Report Required ? .....')
+
+if MyProgram_SummaryReport:
+  MyProgram.LogMsg('.   Summary Report **HAS** Been Requested.')
+  MyProgram.LogMsg('.   Generating .....')
+  MyDNFUpdate.GenerateReport()
+else:
+  MyProgram.LogMsg('.   Summary Report Has **NOT** Been Requested.')
+  MyProgram.LogMsg('.   Skipping .....')
+
+# -------------------------------------------------------------------------------------------------------------------------
+# --- Program Finished - Terminating Now                                                                                ---
+# -------------------------------------------------------------------------------------------------------------------------
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('. Terminating Program .....')
+MyProgram.LogMsg('.')
+MyProgram.LogMsg('.')
+MyProgram.Terminate()
+
